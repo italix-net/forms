@@ -1,0 +1,45 @@
+{
+    "name": "italix/forms",
+    "description": "Form metadata, validation, and layout library - works with any ORM or standalone",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "form",
+        "forms",
+        "validation",
+        "metadata",
+        "schema",
+        "orm",
+        "php"
+    ],
+    "authors": [
+        {
+            "name": "Italix",
+            "homepage": "https://github.com/italix-net"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Italix\\Forms\\": "src/"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Italix\\Forms\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
