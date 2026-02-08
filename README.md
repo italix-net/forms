@@ -397,4 +397,4 @@ $form->fields([
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) for details.
+LGPL-3.0-or-later. See [LICENSE](LICENSE) for details.

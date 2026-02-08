@@ -2,7 +2,7 @@
     "name": "italix/forms",
     "description": "Form metadata, validation, and layout library - works with any ORM or standalone",
     "type": "library",
-    "license": "BSD-3-Clause",
+    "license": "LGPL-3.0-or-later",
     "keywords": [
         "form",
         "forms",
