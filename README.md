@@ -1,6 +1,6 @@
 # Italix Forms
 
-A PHP library for form metadata, validation, and layout management. Works with any ORM or standalone.
+A PHP library for form metadata, validation, layout management, and **HTML rendering**. Works with any ORM or standalone.
 
 ## Installation
 
@@ -17,6 +17,7 @@ composer require italix/forms
 ```php
 <?php
 
+use Italix\Forms\Rendering\FormHtml;
 use Italix\Forms\Validation\Rule;
 use function Italix\Forms\form_meta;
 
@@ -28,23 +29,100 @@ $form = form_meta([
 ]);
 
 // Configure fields
-$form->field('name')
-    ->label('Full Name')
-    ->placeholder('John Doe')
-    ->rules(Rule::required(), Rule::max_length(100));
+$form->fields([
+    'name'  => ['label' => 'Full Name', 'placeholder' => 'John Doe', 'rules' => [Rule::required(), Rule::max_length(100)]],
+    'email' => ['label' => 'Email Address', 'placeholder' => 'you@example.com', 'type' => 'email', 'rules' => [Rule::required(), Rule::email()]],
+    'bio'   => ['label' => 'About You', 'type' => 'textarea'],
+]);
 
-$form->field('email')
-    ->label('Email Address')
-    ->placeholder('you@example.com')
-    ->help('We will never share your email')
-    ->rules(Rule::required(), Rule::email());
+// Render the complete form
+$html = new FormHtml($form);
+$html->action('/contact/send')
+     ->method('POST')
+     ->buttons(['submit' => 'Send', 'cancel' => '/']);
 
-$form->field('bio')
-    ->label('About You')
-    ->type('textarea')
-    ->attr('rows', 5);
+echo $html->render();
+```
 
-// Render in a template
+## HTML Rendering
+
+The `FormHtml` class renders complete HTML forms from metadata:
+
+```php
+<?php
+
+use Italix\Forms\Rendering\FormHtml;
+
+$html = new FormHtml($form);
+$html->action('/users/store')
+     ->method('POST');
+
+// Full form (open + all fields + buttons + close)
+echo $html->render();
+
+// Or render parts individually for custom layout
+echo $html->open();
+echo '<div class="row">';
+echo '<div class="col-6">' . $html->field('name') . '</div>';
+echo '<div class="col-6">' . $html->field('email') . '</div>';
+echo '</div>';
+echo $html->field('bio');
+echo $html->render_buttons();
+echo $html->close();
+```
+
+### Edit Mode with Pre-filled Values
+
+```php
+$html = new FormHtml($form);
+$html->action('/users/42/update')
+     ->method('PUT')
+     ->values(['name' => 'Mario Rossi', 'email' => 'mario@example.com', 'bio' => 'Developer']);
+
+echo $html->render();
+```
+
+### View Mode (Read-Only)
+
+```php
+$html = new FormHtml($form);
+$html->values($user_data)
+     ->mode('view');
+
+echo $html->render();
+```
+
+### Validation Errors
+
+```php
+$html = new FormHtml($form);
+$html->values($_POST)
+     ->errors([
+         'name'  => 'Name is required.',
+         'email' => 'Please enter a valid email.',
+     ]);
+
+echo $html->render();
+```
+
+### Buttons
+
+```php
+$html->buttons([
+    'submit'       => 'Save User',
+    'cancel'       => '/users',
+    'cancel_label' => 'Back to List',
+]);
+```
+
+## Metadata-Only Usage
+
+You can also use FormMeta without `FormHtml` for manual rendering or JSON export:
+
+```php
+<?php
+
+// Manual rendering
 foreach ($form->each() as $name => $field) {
     echo "<div class='form-group'>";
     echo "  <label>{$field->get_label()}</label>";
@@ -52,11 +130,12 @@ foreach ($form->each() as $name => $field) {
     echo "         placeholder='{$field->get_placeholder()}'";
     if ($field->is_required()) echo " required";
     echo "  />";
-    if ($help = $field->get_help()) {
-        echo "  <small>{$help}</small>";
-    }
     echo "</div>";
 }
+
+// JSON export for SPA frontends
+$json = $form->to_json(JSON_PRETTY_PRINT);
+echo "<script>const formConfig = {$json};</script>";
 ```
 
 ## Using with an ORM
@@ -90,6 +169,7 @@ Your Column class should implement `ColumnMeta`:
 <?php
 
 use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Forms\Contracts\RelationMeta;
 
 class MyColumn implements ColumnMeta
 {
@@ -101,8 +181,109 @@ class MyColumn implements ColumnMeta
     /** @return mixed */
     public function get_default() { /* ... */ }
     public function has_default(): bool { /* ... */ }
+    public function get_relation(): ?RelationMeta { return null; }
 }
 ```
+
+## Foreign Key Relations
+
+Foreign key columns can automatically populate select or autocomplete widgets:
+
+```php
+<?php
+
+$form = form_meta([
+    'name'       => ['type' => 'VARCHAR', 'length' => 100, 'nullable' => false],
+    'country_id' => [
+        'type' => 'INTEGER',
+        'relation' => [
+            'table'  => 'countries',
+            'key'    => 'id',
+            'label'  => 'name',
+            'fetcher' => function ($table, $key, $label, $limit) use ($pdo) {
+                $stmt = $pdo->query("SELECT {$key}, {$label} FROM {$table} LIMIT {$limit}");
+                $options = [];
+                while ($row = $stmt->fetch()) {
+                    $options[$row[$key]] = $row[$label];
+                }
+                return $options;
+            },
+        ],
+    ],
+]);
+
+$form->field('country_id')->label('Country');
+
+// FormHtml auto-resolves the FK: renders as <select> with all countries
+$html = new FormHtml($form);
+echo $html->render();
+```
+
+If the related table has more rows than `max_options` (default 100), the field automatically becomes an autocomplete-style text input with `data-autocomplete` attributes.
+
+You can also set a relation fetcher on the table adapter to share the same database callback:
+
+```php
+$table = new GenericTableAdapter($columns);
+$table->set_relation_fetcher(function ($table, $key, $label, $limit) use ($pdo) {
+    $stmt = $pdo->query("SELECT {$key}, {$label} FROM {$table} LIMIT {$limit}");
+    $options = [];
+    while ($row = $stmt->fetch()) {
+        $options[$row[$key]] = $row[$label];
+    }
+    return $options;
+});
+```
+
+## Custom Widgets
+
+Register custom widgets to extend or override the default rendering:
+
+```php
+<?php
+
+use Italix\Forms\FieldMeta;
+use Italix\Forms\Rendering\WidgetInterface;
+use Italix\Forms\Rendering\WidgetRegistry;
+use Italix\Forms\Rendering\FormHtml;
+
+class DatePickerWidget implements WidgetInterface
+{
+    public function render_edit(FieldMeta $field, $value, array $attrs = []): string
+    {
+        $name = htmlspecialchars($field->get_name());
+        $val = htmlspecialchars((string)$value);
+        return '<input type="text" name="' . $name . '" value="' . $val . '" class="datepicker">';
+    }
+
+    public function render_view(FieldMeta $field, $value, array $attrs = []): string
+    {
+        return '<span>' . htmlspecialchars((string)$value) . '</span>';
+    }
+}
+
+$registry = new WidgetRegistry();
+$registry->register('date', new DatePickerWidget());
+
+$html = new FormHtml($form, $registry);
+echo $html->render();
+```
+
+### Built-in Widgets
+
+| Input Type | Widget | Description |
+|---|---|---|
+| text, email, url, tel, search, color | TextWidget | Standard text input |
+| textarea | TextareaWidget | Multi-line text |
+| select | SelectWidget | Dropdown with options |
+| checkbox | CheckboxWidget | Single or multiple checkboxes |
+| radio | RadioWidget | Radio button group |
+| password | PasswordWidget | Password input (never pre-fills) |
+| number, range | NumberWidget | Numeric input (auto step for decimals) |
+| date, datetime-local, time, month, week | DateWidget | Date/time inputs |
+| file | FileWidget | File upload (auto multipart enctype) |
+| hidden | HiddenWidget | Hidden input (no wrapper) |
+| readonly | ReadonlyWidget | Display-only with hidden input |
 
 ## Sections and Layout
 
@@ -358,17 +539,6 @@ $form->field('old_field')
 $form->exclude('id', 'created_at', 'updated_at', 'deleted_at');
 ```
 
-## Export to JSON
-
-For JavaScript form builders (React, Vue, etc.):
-
-```php
-<?php
-
-$json = $form->to_json(JSON_PRETTY_PRINT);
-echo "<script>const formConfig = {$json};</script>";
-```
-
 ## Bulk Configuration
 
 Configure multiple fields at once:
@@ -394,6 +564,24 @@ $form->fields([
     ],
 ]);
 ```
+
+## Examples
+
+See the `examples/` directory for complete, runnable examples:
+
+| Example | Description |
+|---|---|
+| `01_basic_form.php` | Basic contact form rendering |
+| `02_edit_form_with_values.php` | Edit form with pre-filled data and PUT method |
+| `03_view_mode.php` | Read-only view mode |
+| `04_select_radio_checkbox.php` | Choice fields with options |
+| `05_validation_errors.php` | Displaying validation errors |
+| `06_file_upload.php` | File uploads with auto multipart enctype |
+| `07_sections.php` | Organizing fields in sections/fieldsets |
+| `08_foreign_keys.php` | Auto-populating selects from FK relations |
+| `09_custom_widget.php` | Registering a custom widget |
+| `10_field_by_field.php` | Individual field rendering for custom layout |
+| `11_json_export.php` | JSON metadata export for SPA frontends |
 
 ## License
 

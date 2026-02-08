@@ -62,4 +62,13 @@ interface ColumnMeta
      * @return bool
      */
     public function has_default(): bool;
+
+    /**
+     * Get foreign key relation metadata, if this column is a foreign key.
+     *
+     * Return null if this column is not a foreign key.
+     *
+     * @return RelationMeta|null
+     */
+    public function get_relation(): ?RelationMeta;
 }
