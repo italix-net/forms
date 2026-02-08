@@ -22,15 +22,53 @@ use Italix\Forms\Contracts\ColumnMeta;
  */
 class GenericColumnAdapter implements ColumnMeta
 {
+    /** @var string */
+    private $name;
+
+    /** @var string */
+    private $type;
+
+    /** @var bool */
+    private $nullable;
+
+    /** @var bool */
+    private $primary_key;
+
+    /** @var int|null */
+    private $length;
+
+    /** @var mixed */
+    private $default;
+
+    /** @var bool */
+    private $has_default;
+
+    /**
+     * @param string $name
+     * @param string $type
+     * @param bool $nullable
+     * @param bool $primary_key
+     * @param int|null $length
+     * @param mixed $default
+     * @param bool $has_default
+     */
     public function __construct(
-        private string $name,
-        private string $type = 'VARCHAR',
-        private bool $nullable = true,
-        private bool $primary_key = false,
-        private ?int $length = null,
-        private mixed $default = null,
-        private bool $has_default = false,
-    ) {}
+        string $name,
+        string $type = 'VARCHAR',
+        bool $nullable = true,
+        bool $primary_key = false,
+        ?int $length = null,
+        $default = null,
+        bool $has_default = false
+    ) {
+        $this->name = $name;
+        $this->type = $type;
+        $this->nullable = $nullable;
+        $this->primary_key = $primary_key;
+        $this->length = $length;
+        $this->default = $default;
+        $this->has_default = $has_default;
+    }
 
     /**
      * Create a ColumnMeta from an array definition.
@@ -44,17 +82,18 @@ class GenericColumnAdapter implements ColumnMeta
      *
      * @param string $name Column name
      * @param array $definition Column definition array
+     * @return self
      */
     public static function from_array(string $name, array $definition): self
     {
         return new self(
-            name: $name,
-            type: $definition['type'] ?? 'VARCHAR',
-            nullable: $definition['nullable'] ?? true,
-            primary_key: $definition['primary_key'] ?? false,
-            length: $definition['length'] ?? null,
-            default: $definition['default'] ?? null,
-            has_default: array_key_exists('default', $definition),
+            $name,
+            $definition['type'] ?? 'VARCHAR',
+            $definition['nullable'] ?? true,
+            $definition['primary_key'] ?? false,
+            $definition['length'] ?? null,
+            $definition['default'] ?? null,
+            array_key_exists('default', $definition)
         );
     }
 
@@ -83,7 +122,10 @@ class GenericColumnAdapter implements ColumnMeta
         return $this->length;
     }
 
-    public function get_default(): mixed
+    /**
+     * @return mixed
+     */
+    public function get_default()
     {
         return $this->default;
     }

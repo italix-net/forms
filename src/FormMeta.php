@@ -40,23 +40,30 @@ use InvalidArgumentException;
  */
 class FormMeta
 {
+    /** @var TableMeta */
+    private $source;
+
     /** @var array<string, FieldMeta> */
-    private array $field_meta = [];
+    private $field_meta = [];
 
     /** @var array<string, FormSection> */
-    private array $sections = [];
+    private $sections = [];
 
     /** @var string[] */
-    private array $excluded = [];
+    private $excluded = [];
 
-    private ?string $default_section = null;
+    /** @var string|null */
+    private $default_section = null;
 
-    public function __construct(
-        private TableMeta $source
-    ) {}
+    public function __construct(TableMeta $source)
+    {
+        $this->source = $source;
+    }
 
     /**
      * Get the underlying TableMeta source.
+     *
+     * @return TableMeta
      */
     public function source(): TableMeta
     {
@@ -91,6 +98,9 @@ class FormMeta
 
     /**
      * Check if a field has been configured.
+     *
+     * @param string $column
+     * @return bool
      */
     public function has_field(string $column): bool
     {
@@ -109,6 +119,8 @@ class FormMeta
      *     ]);
      *
      * @param array<string, array> $config Field configurations
+     * @return self
+     * @throws InvalidArgumentException If a method name is invalid
      */
     public function fields(array $config): self
     {
@@ -117,11 +129,14 @@ class FormMeta
 
             foreach ($settings as $method => $value) {
                 if (!method_exists($field, $method)) {
-                    continue;
+                    throw new InvalidArgumentException(
+                        "Invalid field configuration method '{$method}' for column '{$column}'. "
+                        . "Check available methods on FieldMeta."
+                    );
                 }
 
                 // Handle array values that should be spread as arguments
-                if (is_array($value) && !in_array($method, ['options', 'attrs', 'rules'])) {
+                if (is_array($value) && !in_array($method, ['options', 'attrs'], true)) {
                     $field->$method(...$value);
                 } else {
                     $field->$method($value);
@@ -138,6 +153,7 @@ class FormMeta
      * Excluded columns won't appear in iteration.
      *
      * @param string ...$columns Column names to exclude
+     * @return self
      */
     public function exclude(string ...$columns): self
     {
@@ -176,6 +192,9 @@ class FormMeta
 
     /**
      * Check if a section has been defined.
+     *
+     * @param string $name
+     * @return bool
      */
     public function has_section(string $name): bool
     {
@@ -184,6 +203,9 @@ class FormMeta
 
     /**
      * Set the default section for fields that don't specify one.
+     *
+     * @param string $name
+     * @return self
      */
     public function default_section(string $name): self
     {
@@ -218,15 +240,12 @@ class FormMeta
         $fields = [];
 
         foreach ($this->source->describe_columns() as $name => $column) {
-            // Skip excluded columns
             if (in_array($name, $this->excluded, true)) {
                 continue;
             }
 
-            // Get or create field meta
             $meta = $this->field_meta[$name] ?? new FieldMeta($column);
 
-            // Skip hidden fields
             if ($meta->is_hidden()) {
                 continue;
             }
@@ -234,7 +253,6 @@ class FormMeta
             $fields[$name] = $meta;
         }
 
-        // Sort by order (nulls last)
         uasort($fields, function (FieldMeta $a, FieldMeta $b): int {
             $orderA = $a->get_order() ?? PHP_INT_MAX;
             $orderB = $b->get_order() ?? PHP_INT_MAX;
@@ -277,24 +295,6 @@ class FormMeta
     /**
      * Get fields organized by section.
      *
-     * Returns an array where each entry contains the section (or null for
-     * ungrouped fields) and an array of fields belonging to that section.
-     *
-     * Example:
-     *
-     *     foreach ($form->by_section() as $sectionName => $data) {
-     *         $section = $data['section'];  // FormSection|null
-     *         $fields = $data['fields'];    // array<string, FieldMeta>
-     *
-     *         if ($section) {
-     *             echo "<h2>{$section->get_title()}</h2>";
-     *         }
-     *
-     *         foreach ($fields as $name => $field) {
-     *             // render field...
-     *         }
-     *     }
-     *
      * @return array<string, array{section: FormSection|null, fields: array<string, FieldMeta>}>
      */
     public function by_section(): array
@@ -318,12 +318,10 @@ class FormMeta
             }
         }
 
-        // Sort sections by order
-        uasort($result, fn(array $a, array $b): int =>
-            $a['section']->get_order() <=> $b['section']->get_order()
-        );
+        uasort($result, function (array $a, array $b): int {
+            return $a['section']->get_order() <=> $b['section']->get_order();
+        });
 
-        // Add ungrouped fields at the beginning
         if (!empty($ungrouped)) {
             $result = ['_default' => ['section' => null, 'fields' => $ungrouped]] + $result;
         }
@@ -333,6 +331,8 @@ class FormMeta
 
     /**
      * Count the total number of visible fields.
+     *
+     * @return int
      */
     public function count(): int
     {
@@ -351,12 +351,16 @@ class FormMeta
      * Export the entire form configuration as an array.
      *
      * Useful for serialization, caching, or passing to template engines.
+     * Sensitive fields are automatically redacted unless $include_sensitive is true.
+     *
+     * @param bool $include_sensitive Whether to include sensitive field data
+     * @return array
      */
-    public function to_array(): array
+    public function to_array(bool $include_sensitive = false): array
     {
         $fields = [];
         foreach ($this->each() as $name => $field) {
-            $fields[$name] = $field->to_array();
+            $fields[$name] = $field->to_array($include_sensitive);
         }
 
         $sections = [];
@@ -376,11 +380,18 @@ class FormMeta
      * Export the form configuration as JSON.
      *
      * Useful for JavaScript form builders like React, Vue, etc.
+     * Sensitive fields are automatically redacted unless $include_sensitive is true.
      *
      * @param int $flags JSON encoding flags
+     * @param bool $include_sensitive Whether to include sensitive field data
+     * @return string
      */
-    public function to_json(int $flags = 0): string
+    public function to_json(int $flags = 0, bool $include_sensitive = false): string
     {
-        return json_encode($this->to_array(), $flags | JSON_THROW_ON_ERROR);
+        $json = json_encode($this->to_array($include_sensitive), $flags);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode form metadata to JSON: ' . json_last_error_msg());
+        }
+        return $json;
     }
 }

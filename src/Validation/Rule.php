@@ -26,11 +26,26 @@ namespace Italix\Forms\Validation;
  */
 class Rule
 {
-    private function __construct(
-        public readonly string $name,
-        public readonly array $params = [],
-        public readonly ?string $message = null,
-    ) {}
+    /** @var string */
+    public $name;
+
+    /** @var array */
+    public $params;
+
+    /** @var string|null */
+    public $message;
+
+    /**
+     * @param string $name
+     * @param array $params
+     * @param string|null $message
+     */
+    private function __construct(string $name, array $params = [], ?string $message = null)
+    {
+        $this->name = $name;
+        $this->params = $params;
+        $this->message = $message;
+    }
 
     // =========================================================================
     // Presence Rules
@@ -38,6 +53,9 @@ class Rule
 
     /**
      * Field is required (cannot be empty).
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function required(?string $message = null): self
     {
@@ -46,16 +64,26 @@ class Rule
 
     /**
      * Field is required if another field has a specific value.
+     *
+     * @param string $field
+     * @param mixed $value
+     * @param string|null $message
+     * @return self
      */
-    public static function required_if(string $field, mixed $value, ?string $message = null): self
+    public static function required_if(string $field, $value, ?string $message = null): self
     {
         return new self('required_if', ['field' => $field, 'value' => $value], $message ?? 'This field is required');
     }
 
     /**
      * Field is required unless another field has a specific value.
+     *
+     * @param string $field
+     * @param mixed $value
+     * @param string|null $message
+     * @return self
      */
-    public static function required_unless(string $field, mixed $value, ?string $message = null): self
+    public static function required_unless(string $field, $value, ?string $message = null): self
     {
         return new self('required_unless', ['field' => $field, 'value' => $value], $message ?? 'This field is required');
     }
@@ -66,6 +94,9 @@ class Rule
 
     /**
      * Field must be a valid email address.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function email(?string $message = null): self
     {
@@ -74,6 +105,9 @@ class Rule
 
     /**
      * Field must be a valid URL.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function url(?string $message = null): self
     {
@@ -82,6 +116,10 @@ class Rule
 
     /**
      * Field must match a regular expression pattern.
+     *
+     * @param string $regex
+     * @param string|null $message
+     * @return self
      */
     public static function pattern(string $regex, ?string $message = null): self
     {
@@ -90,6 +128,9 @@ class Rule
 
     /**
      * Field must contain only alphabetic characters.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function alpha(?string $message = null): self
     {
@@ -98,6 +139,9 @@ class Rule
 
     /**
      * Field must contain only alphanumeric characters.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function alpha_num(?string $message = null): self
     {
@@ -106,6 +150,9 @@ class Rule
 
     /**
      * Field must contain only alphanumeric characters, dashes, and underscores.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function alpha_dash(?string $message = null): self
     {
@@ -114,6 +161,9 @@ class Rule
 
     /**
      * Field must be numeric.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function numeric(?string $message = null): self
     {
@@ -122,6 +172,9 @@ class Rule
 
     /**
      * Field must be an integer.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function integer(?string $message = null): self
     {
@@ -130,6 +183,9 @@ class Rule
 
     /**
      * Field must be a valid date.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function date(?string $message = null): self
     {
@@ -138,6 +194,10 @@ class Rule
 
     /**
      * Field must match a date format.
+     *
+     * @param string $format
+     * @param string|null $message
+     * @return self
      */
     public static function date_format(string $format, ?string $message = null): self
     {
@@ -149,23 +209,35 @@ class Rule
     // =========================================================================
 
     /**
-     * Field must have at least the specified length (for strings) or value (for numbers).
+     * Field must have at least the specified value (for numbers) or length (for strings).
+     *
+     * @param int|float $value
+     * @param string|null $message
+     * @return self
      */
-    public static function min(int|float $value, ?string $message = null): self
+    public static function min($value, ?string $message = null): self
     {
         return new self('min', ['value' => $value], $message ?? "Minimum value is {$value}");
     }
 
     /**
-     * Field must not exceed the specified length (for strings) or value (for numbers).
+     * Field must not exceed the specified value (for numbers) or length (for strings).
+     *
+     * @param int|float $value
+     * @param string|null $message
+     * @return self
      */
-    public static function max(int|float $value, ?string $message = null): self
+    public static function max($value, ?string $message = null): self
     {
         return new self('max', ['value' => $value], $message ?? "Maximum value is {$value}");
     }
 
     /**
      * String must have at least the specified number of characters.
+     *
+     * @param int $length
+     * @param string|null $message
+     * @return self
      */
     public static function min_length(int $length, ?string $message = null): self
     {
@@ -174,6 +246,10 @@ class Rule
 
     /**
      * String must not exceed the specified number of characters.
+     *
+     * @param int $length
+     * @param string|null $message
+     * @return self
      */
     public static function max_length(int $length, ?string $message = null): self
     {
@@ -182,14 +258,24 @@ class Rule
 
     /**
      * Value must be between min and max (inclusive).
+     *
+     * @param int|float $min
+     * @param int|float $max
+     * @param string|null $message
+     * @return self
      */
-    public static function between(int|float $min, int|float $max, ?string $message = null): self
+    public static function between($min, $max, ?string $message = null): self
     {
         return new self('between', ['min' => $min, 'max' => $max], $message ?? "Value must be between {$min} and {$max}");
     }
 
     /**
      * String length must be between min and max characters (inclusive).
+     *
+     * @param int $min
+     * @param int $max
+     * @param string|null $message
+     * @return self
      */
     public static function length_between(int $min, int $max, ?string $message = null): self
     {
@@ -198,6 +284,10 @@ class Rule
 
     /**
      * String must have exactly the specified length.
+     *
+     * @param int $length
+     * @param string|null $message
+     * @return self
      */
     public static function length(int $length, ?string $message = null): self
     {
@@ -210,6 +300,10 @@ class Rule
 
     /**
      * Field must be one of the specified values.
+     *
+     * @param array $values
+     * @param string|null $message
+     * @return self
      */
     public static function in(array $values, ?string $message = null): self
     {
@@ -218,6 +312,10 @@ class Rule
 
     /**
      * Field must not be one of the specified values.
+     *
+     * @param array $values
+     * @param string|null $message
+     * @return self
      */
     public static function not_in(array $values, ?string $message = null): self
     {
@@ -226,6 +324,10 @@ class Rule
 
     /**
      * Field must match another field's value (e.g., password confirmation).
+     *
+     * @param string $field
+     * @param string|null $message
+     * @return self
      */
     public static function confirmed(string $field = 'confirmation', ?string $message = null): self
     {
@@ -234,6 +336,10 @@ class Rule
 
     /**
      * Field must match another field's value.
+     *
+     * @param string $field
+     * @param string|null $message
+     * @return self
      */
     public static function same(string $field, ?string $message = null): self
     {
@@ -242,6 +348,10 @@ class Rule
 
     /**
      * Field must be different from another field's value.
+     *
+     * @param string $field
+     * @param string|null $message
+     * @return self
      */
     public static function different(string $field, ?string $message = null): self
     {
@@ -250,32 +360,48 @@ class Rule
 
     /**
      * Field must be greater than a value or another field.
+     *
+     * @param int|float|string $value
+     * @param string|null $message
+     * @return self
      */
-    public static function gt(int|float|string $value, ?string $message = null): self
+    public static function gt($value, ?string $message = null): self
     {
         return new self('gt', ['value' => $value], $message ?? "Must be greater than {$value}");
     }
 
     /**
      * Field must be greater than or equal to a value or another field.
+     *
+     * @param int|float|string $value
+     * @param string|null $message
+     * @return self
      */
-    public static function gte(int|float|string $value, ?string $message = null): self
+    public static function gte($value, ?string $message = null): self
     {
         return new self('gte', ['value' => $value], $message ?? "Must be at least {$value}");
     }
 
     /**
      * Field must be less than a value or another field.
+     *
+     * @param int|float|string $value
+     * @param string|null $message
+     * @return self
      */
-    public static function lt(int|float|string $value, ?string $message = null): self
+    public static function lt($value, ?string $message = null): self
     {
         return new self('lt', ['value' => $value], $message ?? "Must be less than {$value}");
     }
 
     /**
      * Field must be less than or equal to a value or another field.
+     *
+     * @param int|float|string $value
+     * @param string|null $message
+     * @return self
      */
-    public static function lte(int|float|string $value, ?string $message = null): self
+    public static function lte($value, ?string $message = null): self
     {
         return new self('lte', ['value' => $value], $message ?? "Must be at most {$value}");
     }
@@ -286,6 +412,10 @@ class Rule
 
     /**
      * Date must be before another date.
+     *
+     * @param string $date
+     * @param string|null $message
+     * @return self
      */
     public static function before(string $date, ?string $message = null): self
     {
@@ -294,6 +424,10 @@ class Rule
 
     /**
      * Date must be before or equal to another date.
+     *
+     * @param string $date
+     * @param string|null $message
+     * @return self
      */
     public static function before_or_equal(string $date, ?string $message = null): self
     {
@@ -302,6 +436,10 @@ class Rule
 
     /**
      * Date must be after another date.
+     *
+     * @param string $date
+     * @param string|null $message
+     * @return self
      */
     public static function after(string $date, ?string $message = null): self
     {
@@ -310,6 +448,10 @@ class Rule
 
     /**
      * Date must be after or equal to another date.
+     *
+     * @param string $date
+     * @param string|null $message
+     * @return self
      */
     public static function after_or_equal(string $date, ?string $message = null): self
     {
@@ -322,6 +464,11 @@ class Rule
 
     /**
      * Value must be unique in the database table.
+     *
+     * @param string $table
+     * @param string|null $column
+     * @param string|null $message
+     * @return self
      */
     public static function unique(string $table, ?string $column = null, ?string $message = null): self
     {
@@ -330,6 +477,11 @@ class Rule
 
     /**
      * Value must exist in the database table.
+     *
+     * @param string $table
+     * @param string|null $column
+     * @param string|null $message
+     * @return self
      */
     public static function exists(string $table, ?string $column = null, ?string $message = null): self
     {
@@ -342,6 +494,9 @@ class Rule
 
     /**
      * Field must be an uploaded file.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function file(?string $message = null): self
     {
@@ -350,6 +505,9 @@ class Rule
 
     /**
      * File must be an image.
+     *
+     * @param string|null $message
+     * @return self
      */
     public static function image(?string $message = null): self
     {
@@ -358,6 +516,10 @@ class Rule
 
     /**
      * File must have one of the specified MIME types.
+     *
+     * @param array $types
+     * @param string|null $message
+     * @return self
      */
     public static function mimes(array $types, ?string $message = null): self
     {
@@ -367,6 +529,10 @@ class Rule
 
     /**
      * File must not exceed the specified size in kilobytes.
+     *
+     * @param int $kilobytes
+     * @param string|null $message
+     * @return self
      */
     public static function max_file_size(int $kilobytes, ?string $message = null): self
     {
@@ -383,10 +549,45 @@ class Rule
      * @param string $name Rule name (for identification)
      * @param array $params Rule parameters
      * @param string|null $message Error message
+     * @return self
      */
     public static function custom(string $name, array $params = [], ?string $message = null): self
     {
         return new self($name, $params, $message);
+    }
+
+    // =========================================================================
+    // Getters
+    // =========================================================================
+
+    /**
+     * Get the rule name.
+     *
+     * @return string
+     */
+    public function get_name(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Get the rule parameters.
+     *
+     * @return array
+     */
+    public function get_params(): array
+    {
+        return $this->params;
+    }
+
+    /**
+     * Get the error message.
+     *
+     * @return string|null
+     */
+    public function get_message(): ?string
+    {
+        return $this->message;
     }
 
     // =========================================================================
@@ -397,6 +598,8 @@ class Rule
      * Export the rule as an array.
      *
      * Useful for serializing to JSON for JavaScript validation libraries.
+     *
+     * @return array
      */
     public function to_array(): array
     {
@@ -409,6 +612,8 @@ class Rule
 
     /**
      * Get a string representation of the rule.
+     *
+     * @return string
      */
     public function __toString(): string
     {

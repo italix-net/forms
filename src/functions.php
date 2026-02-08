@@ -30,7 +30,7 @@ use Italix\Forms\Contracts\TableMeta;
  * @param TableMeta|array $source The table metadata source
  * @return FormMeta The form metadata wrapper
  */
-function form_meta(TableMeta|array $source): FormMeta
+function form_meta($source): FormMeta
 {
     if (is_array($source)) {
         $source = new GenericTableAdapter($source);
