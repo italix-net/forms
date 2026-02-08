@@ -20,27 +20,41 @@ namespace Italix\Forms;
  *
  *     $form->section('settings')
  *         ->title('Account Settings')
- *         ->collapsible(collapsed: true);
+ *         ->collapsible(true);
  */
 class FormSection
 {
-    // Display properties
-    private ?string $title = null;
-    private ?string $description = null;
-    private ?string $icon = null;
+    /** @var string */
+    private $name;
 
-    // Layout properties
-    private int $order = 0;
-    private int $columns = 1;
-    private ?string $class = null;
+    /** @var string|null */
+    private $title = null;
 
-    // Behavior properties
-    private bool $collapsible = false;
-    private bool $collapsed = false;
+    /** @var string|null */
+    private $description = null;
 
-    public function __construct(
-        private string $name
-    ) {}
+    /** @var string|null */
+    private $icon = null;
+
+    /** @var int */
+    private $order = 0;
+
+    /** @var int */
+    private $columns = 1;
+
+    /** @var string|null */
+    private $class = null;
+
+    /** @var bool */
+    private $collapsible = false;
+
+    /** @var bool */
+    private $collapsed = false;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
 
     // =========================================================================
     // Display Setters (Fluent)
@@ -48,6 +62,9 @@ class FormSection
 
     /**
      * Set the section title.
+     *
+     * @param string $title
+     * @return self
      */
     public function title(string $title): self
     {
@@ -57,6 +74,9 @@ class FormSection
 
     /**
      * Set the section description.
+     *
+     * @param string $description
+     * @return self
      */
     public function description(string $description): self
     {
@@ -66,6 +86,9 @@ class FormSection
 
     /**
      * Set the section icon (icon name or CSS class).
+     *
+     * @param string $icon
+     * @return self
      */
     public function icon(string $icon): self
     {
@@ -79,6 +102,9 @@ class FormSection
 
     /**
      * Set the display order (lower numbers first).
+     *
+     * @param int $order
+     * @return self
      */
     public function order(int $order): self
     {
@@ -88,6 +114,9 @@ class FormSection
 
     /**
      * Set the number of columns in the section grid.
+     *
+     * @param int $columns
+     * @return self
      */
     public function columns(int $columns): self
     {
@@ -97,6 +126,9 @@ class FormSection
 
     /**
      * Set the section wrapper CSS class.
+     *
+     * @param string $class
+     * @return self
      */
     public function class(string $class): self
     {
@@ -112,6 +144,7 @@ class FormSection
      * Make the section collapsible.
      *
      * @param bool $collapsed Whether the section should start collapsed
+     * @return self
      */
     public function collapsible(bool $collapsed = false): self
     {
@@ -122,6 +155,8 @@ class FormSection
 
     /**
      * Start the section in collapsed state.
+     *
+     * @return self
      */
     public function collapsed(): self
     {
@@ -132,6 +167,8 @@ class FormSection
 
     /**
      * Start the section in expanded state (default).
+     *
+     * @return self
      */
     public function expanded(): self
     {
@@ -145,6 +182,8 @@ class FormSection
 
     /**
      * Get the section identifier name.
+     *
+     * @return string
      */
     public function get_name(): string
     {
@@ -153,6 +192,8 @@ class FormSection
 
     /**
      * Get the section title (auto-generated from name if not set).
+     *
+     * @return string
      */
     public function get_title(): string
     {
@@ -160,12 +201,13 @@ class FormSection
             return $this->title;
         }
 
-        // Convert snake_case to Title Case
         return ucwords(str_replace('_', ' ', $this->name));
     }
 
     /**
      * Get the section description.
+     *
+     * @return string|null
      */
     public function get_description(): ?string
     {
@@ -174,6 +216,8 @@ class FormSection
 
     /**
      * Get the section icon.
+     *
+     * @return string|null
      */
     public function get_icon(): ?string
     {
@@ -182,6 +226,8 @@ class FormSection
 
     /**
      * Get the display order.
+     *
+     * @return int
      */
     public function get_order(): int
     {
@@ -190,6 +236,8 @@ class FormSection
 
     /**
      * Get the number of grid columns.
+     *
+     * @return int
      */
     public function get_columns(): int
     {
@@ -198,6 +246,8 @@ class FormSection
 
     /**
      * Get the CSS class.
+     *
+     * @return string|null
      */
     public function get_class(): ?string
     {
@@ -206,6 +256,8 @@ class FormSection
 
     /**
      * Check if the section is collapsible.
+     *
+     * @return bool
      */
     public function is_collapsible(): bool
     {
@@ -214,6 +266,8 @@ class FormSection
 
     /**
      * Check if the section starts collapsed.
+     *
+     * @return bool
      */
     public function is_collapsed(): bool
     {
@@ -226,6 +280,8 @@ class FormSection
 
     /**
      * Export all section metadata as an array.
+     *
+     * @return array
      */
     public function to_array(): array
     {

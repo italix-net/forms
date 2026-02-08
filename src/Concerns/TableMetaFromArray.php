@@ -18,7 +18,7 @@ use Italix\Forms\Contracts\ColumnMeta;
  *     {
  *         use TableMetaFromArray;
  *
- *         private array $columns = [];
+ *         private $columns = [];
  *
  *         protected function get_columns_for_description(): array
  *         {

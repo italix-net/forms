@@ -26,7 +26,7 @@ use Italix\Forms\Contracts\TableMeta;
 class GenericTableAdapter implements TableMeta
 {
     /** @var array<string, ColumnMeta> */
-    private array $columns = [];
+    private $columns = [];
 
     /**
      * @param array<string, array|ColumnMeta> $columns Column definitions

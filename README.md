@@ -10,7 +10,7 @@ composer require italix/forms
 
 ## Requirements
 
-- PHP 8.1 or higher
+- PHP 7.4 or higher
 
 ## Quick Start
 
@@ -74,7 +74,8 @@ class MyTable implements TableMeta
 {
     use TableMetaFromArray;
 
-    private array $columns = [];
+    /** @var array<string, ColumnMeta> */
+    private $columns = [];
 
     protected function get_columns_for_description(): array
     {
@@ -97,7 +98,8 @@ class MyColumn implements ColumnMeta
     public function is_nullable(): bool { /* ... */ }
     public function is_primary_key(): bool { /* ... */ }
     public function get_length(): ?int { /* ... */ }
-    public function get_default(): mixed { /* ... */ }
+    /** @return mixed */
+    public function get_default() { /* ... */ }
     public function has_default(): bool { /* ... */ }
 }
 ```
@@ -121,7 +123,7 @@ $form->section('personal')
 
 $form->section('account')
     ->title('Account Settings')
-    ->collapsible(collapsed: true)
+    ->collapsible(true)
     ->order(2);
 
 // Assign fields to sections
@@ -191,10 +193,18 @@ $form->field('username')
 
 ### Available Rules
 
+#### Presence Rules
+
 | Rule | Description |
 |------|-------------|
 | `required()` | Field cannot be empty |
 | `required_if($field, $value)` | Required if another field has value |
+| `required_unless($field, $value)` | Required unless another field has value |
+
+#### Format Rules
+
+| Rule | Description |
+|------|-------------|
 | `email()` | Valid email address |
 | `url()` | Valid URL |
 | `numeric()` | Numeric value |
@@ -204,6 +214,12 @@ $form->field('username')
 | `alpha_dash()` | Letters, numbers, dashes, underscores |
 | `date()` | Valid date |
 | `date_format($format)` | Matches date format |
+| `pattern($regex)` | Must match regex |
+
+#### Size/Length Rules
+
+| Rule | Description |
+|------|-------------|
 | `min($value)` | Minimum value |
 | `max($value)` | Maximum value |
 | `min_length($length)` | Minimum string length |
@@ -211,21 +227,68 @@ $form->field('username')
 | `length($length)` | Exact string length |
 | `between($min, $max)` | Value in range |
 | `length_between($min, $max)` | String length in range |
+
+#### Comparison Rules
+
+| Rule | Description |
+|------|-------------|
 | `in($values)` | Must be one of values |
 | `not_in($values)` | Must not be one of values |
 | `confirmed($field)` | Must match another field |
 | `same($field)` | Must equal another field |
 | `different($field)` | Must differ from another field |
-| `pattern($regex)` | Must match regex |
+| `gt($value)` | Greater than a value |
+| `gte($value)` | Greater than or equal to a value |
+| `lt($value)` | Less than a value |
+| `lte($value)` | Less than or equal to a value |
+
+#### Date Comparison Rules
+
+| Rule | Description |
+|------|-------------|
 | `before($date)` | Date before |
+| `before_or_equal($date)` | Date on or before |
 | `after($date)` | Date after |
+| `after_or_equal($date)` | Date on or after |
+
+#### Database Rules
+
+| Rule | Description |
+|------|-------------|
 | `unique($table, $column)` | Unique in database |
 | `exists($table, $column)` | Exists in database |
+
+#### File Rules
+
+| Rule | Description |
+|------|-------------|
 | `file()` | Must be uploaded file |
 | `image()` | Must be image |
 | `mimes($types)` | File type restriction |
 | `max_file_size($kb)` | Max file size in KB |
+
+#### Custom Rules
+
+| Rule | Description |
+|------|-------------|
 | `custom($name, $params)` | Custom rule |
+
+## Sensitive Fields
+
+Mark fields containing sensitive data to prevent them from being included in JSON/array exports:
+
+```php
+<?php
+
+$form->field('password')->sensitive();
+$form->field('api_key')->sensitive();
+
+// Sensitive fields are redacted by default in exports
+$json = $form->to_json();
+
+// To include sensitive fields (e.g. for server-side use)
+$all_data = $form->to_array(true);
+```
 
 ## Field Options
 
@@ -334,4 +397,4 @@ $form->fields([
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+BSD 3-Clause License. See [LICENSE](LICENSE) for details.
