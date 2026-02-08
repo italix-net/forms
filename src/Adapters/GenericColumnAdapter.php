@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Italix\Forms\Adapters;
 
 use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Forms\Contracts\RelationMeta;
 
 /**
  * Generic adapter that wraps any array or data as a ColumnMeta.
@@ -18,6 +19,16 @@ use Italix\Forms\Contracts\ColumnMeta;
  *         'type' => 'VARCHAR',
  *         'length' => 255,
  *         'nullable' => false,
+ *     ]);
+ *
+ *     // With a foreign key relation:
+ *     $column = GenericColumnAdapter::from_array('country_id', [
+ *         'type' => 'INTEGER',
+ *         'relation' => [
+ *             'table' => 'countries',
+ *             'key'   => 'id',
+ *             'label' => 'name',
+ *         ],
  *     ]);
  */
 class GenericColumnAdapter implements ColumnMeta
@@ -43,6 +54,9 @@ class GenericColumnAdapter implements ColumnMeta
     /** @var bool */
     private $has_default;
 
+    /** @var RelationMeta|null */
+    private $relation;
+
     /**
      * @param string $name
      * @param string $type
@@ -51,6 +65,7 @@ class GenericColumnAdapter implements ColumnMeta
      * @param int|null $length
      * @param mixed $default
      * @param bool $has_default
+     * @param RelationMeta|null $relation
      */
     public function __construct(
         string $name,
@@ -59,7 +74,8 @@ class GenericColumnAdapter implements ColumnMeta
         bool $primary_key = false,
         ?int $length = null,
         $default = null,
-        bool $has_default = false
+        bool $has_default = false,
+        ?RelationMeta $relation = null
     ) {
         $this->name = $name;
         $this->type = $type;
@@ -68,6 +84,7 @@ class GenericColumnAdapter implements ColumnMeta
         $this->length = $length;
         $this->default = $default;
         $this->has_default = $has_default;
+        $this->relation = $relation;
     }
 
     /**
@@ -79,6 +96,7 @@ class GenericColumnAdapter implements ColumnMeta
      *   - primary_key: bool (default: false)
      *   - length: int|null (default: null)
      *   - default: mixed (default: null)
+     *   - relation: array with 'table', 'key', 'label' keys (optional)
      *
      * @param string $name Column name
      * @param array $definition Column definition array
@@ -86,6 +104,17 @@ class GenericColumnAdapter implements ColumnMeta
      */
     public static function from_array(string $name, array $definition): self
     {
+        $relation = null;
+        if (isset($definition['relation']) && is_array($definition['relation'])) {
+            $rel = $definition['relation'];
+            $relation = new GenericRelationAdapter(
+                $rel['table'] ?? '',
+                $rel['key'] ?? 'id',
+                $rel['label'] ?? 'name',
+                $rel['fetcher'] ?? null
+            );
+        }
+
         return new self(
             $name,
             $definition['type'] ?? 'VARCHAR',
@@ -93,7 +122,8 @@ class GenericColumnAdapter implements ColumnMeta
             $definition['primary_key'] ?? false,
             $definition['length'] ?? null,
             $definition['default'] ?? null,
-            array_key_exists('default', $definition)
+            array_key_exists('default', $definition),
+            $relation
         );
     }
 
@@ -133,5 +163,10 @@ class GenericColumnAdapter implements ColumnMeta
     public function has_default(): bool
     {
         return $this->has_default;
+    }
+
+    public function get_relation(): ?RelationMeta
+    {
+        return $this->relation;
     }
 }
