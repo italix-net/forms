@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Italix\Forms\Adapters\GenericColumnAdapter;
 use Italix\Forms\Adapters\GenericRelationAdapter;
 use Italix\Forms\Adapters\GenericTableAdapter;
-use Italix\Forms\Contracts\RelationMeta;
+use Italix\Contracts\RelationMeta;
 use Italix\Forms\FieldMeta;
 use Italix\Forms\FormMeta;
 

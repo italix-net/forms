@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Rendering;
 
-use Italix\Forms\Contracts\PolymorphicColumnMeta;
-use Italix\Forms\Contracts\RelationalColumnMeta;
+use Italix\Contracts\PolymorphicColumnMeta;
+use Italix\Contracts\RelationalColumnMeta;
 use Italix\Forms\FieldMeta;
 use Italix\Forms\FormMeta;
 use Italix\Forms\FormSection;

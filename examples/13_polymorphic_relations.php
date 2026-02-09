@@ -23,9 +23,9 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\PolymorphicColumnMeta;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\ColumnMeta;
+use Italix\Contracts\PolymorphicColumnMeta;
+use Italix\Contracts\TableMeta;
 use Italix\Forms\FormMeta;
 use Italix\Forms\Rendering\FormHtml;
 use Italix\Forms\Validation\Rule;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Italix\Forms;
 
-use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Contracts\ColumnMeta;
 use Italix\Forms\Validation\Rule;
 use InvalidArgumentException;
 

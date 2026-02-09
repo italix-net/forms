@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Italix\Forms\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\DelegatedTableMeta;
-use Italix\Forms\Contracts\PolymorphicColumnMeta;
-use Italix\Forms\Contracts\RelationalColumnMeta;
-use Italix\Forms\Contracts\RelationMeta;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\ColumnMeta;
+use Italix\Contracts\DelegatedTableMeta;
+use Italix\Contracts\PolymorphicColumnMeta;
+use Italix\Contracts\RelationalColumnMeta;
+use Italix\Contracts\RelationMeta;
+use Italix\Contracts\TableMeta;
 use Italix\Forms\FieldMeta;
 use Italix\Forms\FormMeta;
 use Italix\Forms\Rendering\FormHtml;

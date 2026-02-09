@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Adapters;
 
-use Italix\Forms\Contracts\RelationalColumnMeta;
-use Italix\Forms\Contracts\RelationMeta;
+use Italix\Contracts\RelationalColumnMeta;
+use Italix\Contracts\RelationMeta;
 
 /**
  * Generic adapter that wraps any array or data as a RelationalColumnMeta.

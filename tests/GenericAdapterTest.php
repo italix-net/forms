@@ -7,8 +7,8 @@ namespace Italix\Forms\Tests;
 use PHPUnit\Framework\TestCase;
 use Italix\Forms\Adapters\GenericColumnAdapter;
 use Italix\Forms\Adapters\GenericTableAdapter;
-use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\ColumnMeta;
+use Italix\Contracts\TableMeta;
 
 class GenericAdapterTest extends TestCase
 {

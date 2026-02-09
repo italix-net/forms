@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Italix\Forms;
 
 use Italix\Forms\Adapters\GenericTableAdapter;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\TableMeta;
 
 /**
  * Create a FormMeta instance from various sources.

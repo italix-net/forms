@@ -145,8 +145,8 @@ Italix Forms works with any ORM. Just implement the `TableMeta` interface:
 ```php
 <?php
 
-use Italix\Forms\Contracts\TableMeta;
-use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Contracts\TableMeta;
+use Italix\Contracts\ColumnMeta;
 use Italix\Forms\Concerns\TableMetaFromArray;
 
 class MyTable implements TableMeta
@@ -168,7 +168,7 @@ Your Column class should implement `ColumnMeta` (minimal) or `RelationalColumnMe
 ```php
 <?php
 
-use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Contracts\ColumnMeta;
 
 // Minimal: just column metadata
 class MyColumn implements ColumnMeta
@@ -187,8 +187,8 @@ class MyColumn implements ColumnMeta
 ```php
 <?php
 
-use Italix\Forms\Contracts\RelationalColumnMeta;
-use Italix\Forms\Contracts\RelationMeta;
+use Italix\Contracts\RelationalColumnMeta;
+use Italix\Contracts\RelationMeta;
 
 // With FK support: auto-populates select/autocomplete widgets
 class MyOrmColumn implements RelationalColumnMeta
@@ -358,7 +358,7 @@ For your ORM to support delegation, implement `DelegatedTableMeta` on the base t
 ```php
 <?php
 
-use Italix\Forms\Contracts\DelegatedTableMeta;
+use Italix\Contracts\DelegatedTableMeta;
 
 class MyOrmTable implements DelegatedTableMeta
 {
@@ -384,7 +384,7 @@ For polymorphic FK columns (e.g., `commentable_type` + `commentable_id`), implem
 ```php
 <?php
 
-use Italix\Forms\Contracts\PolymorphicColumnMeta;
+use Italix\Contracts\PolymorphicColumnMeta;
 
 class MyPolymorphicColumn implements PolymorphicColumnMeta
 {
