@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Adapters;
 
-use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Forms\Contracts\RelationalColumnMeta;
 use Italix\Forms\Contracts\RelationMeta;
 
 /**
- * Generic adapter that wraps any array or data as a ColumnMeta.
+ * Generic adapter that wraps any array or data as a RelationalColumnMeta.
  *
  * Use this when you don't have an ORM but want to define columns
  * from arrays or other data sources.
+ *
+ * Implements RelationalColumnMeta (extends ColumnMeta) so it supports
+ * FK relations when a 'relation' key is provided.
  *
  * Example:
  *
@@ -31,7 +34,7 @@ use Italix\Forms\Contracts\RelationMeta;
  *         ],
  *     ]);
  */
-class GenericColumnAdapter implements ColumnMeta
+class GenericColumnAdapter implements RelationalColumnMeta
 {
     /** @var string */
     private $name;

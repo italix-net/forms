@@ -163,14 +163,14 @@ class MyTable implements TableMeta
 }
 ```
 
-Your Column class should implement `ColumnMeta`:
+Your Column class should implement `ColumnMeta` (minimal) or `RelationalColumnMeta` (with FK support):
 
 ```php
 <?php
 
 use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\RelationMeta;
 
+// Minimal: just column metadata
 class MyColumn implements ColumnMeta
 {
     public function get_name(): string { /* ... */ }
@@ -181,9 +181,40 @@ class MyColumn implements ColumnMeta
     /** @return mixed */
     public function get_default() { /* ... */ }
     public function has_default(): bool { /* ... */ }
-    public function get_relation(): ?RelationMeta { return null; }
 }
 ```
+
+```php
+<?php
+
+use Italix\Forms\Contracts\RelationalColumnMeta;
+use Italix\Forms\Contracts\RelationMeta;
+
+// With FK support: auto-populates select/autocomplete widgets
+class MyOrmColumn implements RelationalColumnMeta
+{
+    // ... all ColumnMeta methods ...
+
+    public function get_relation(): ?RelationMeta
+    {
+        // Return relation info for FK columns, null for others
+    }
+}
+```
+
+### Layered Interface Architecture
+
+The contracts are designed as a layered hierarchy so implementors only need to handle what they support:
+
+| Interface | Extends | Purpose |
+|---|---|---|
+| `ColumnMeta` | - | Core column info (7 methods) |
+| `RelationalColumnMeta` | `ColumnMeta` | FK-aware columns with `get_relation()` |
+| `PolymorphicColumnMeta` | `ColumnMeta` | Polymorphic FK columns |
+| `TableMeta` | - | Core table with column enumeration |
+| `DelegatedTableMeta` | `TableMeta` | Tables with delegated sub-types |
+
+FormMeta uses `instanceof` checks at runtime to detect capabilities -- no configuration needed.
 
 ## Foreign Key Relations
 
@@ -284,6 +315,93 @@ echo $html->render();
 | file | FileWidget | File upload (auto multipart enctype) |
 | hidden | HiddenWidget | Hidden input (no wrapper) |
 | readonly | ReadonlyWidget | Display-only with hidden input |
+
+## Delegated Types
+
+When your ORM uses delegated types (a base table with type-specific sub-tables), FormMeta can automatically merge columns from the full chain:
+
+```php
+<?php
+
+// Assuming your ORM Table implements DelegatedTableMeta:
+// things (id, type, type_path, name, description)
+//   ├── books (id, thing_id, isbn, pages)
+//   └── movies (id, thing_id, director, duration)
+//       Book also delegates to:
+//       └── comics_books (id, book_id, illustrator, is_color)
+
+$form = new FormMeta($things_table);
+
+// Single-level: Thing + Book
+$form->delegate('Book');
+// Shows: name, description, isbn, pages
+// Auto-hides: type, type_path, thing_id, ids
+
+// N-level chain: Thing + Book + ComicsBook (just specify the leaf)
+$form->delegate('ComicsBook');
+// Resolves: Thing -> Book -> ComicsBook
+// Shows: name, description, isbn, pages, illustrator, is_color
+// Auto-hides: all type/path/FK/PK glue columns
+
+// Wildcard: admin form with type selector
+$form->delegate('*');
+// Shows: type as <select>, plus all delegate fields with
+// data-delegate-type attributes for JS conditional visibility
+```
+
+The `delegate()` method works with any depth of delegation chain. You only specify the leaf type -- the library resolves the full path automatically.
+
+### Implementing DelegatedTableMeta
+
+For your ORM to support delegation, implement `DelegatedTableMeta` on the base table:
+
+```php
+<?php
+
+use Italix\Forms\Contracts\DelegatedTableMeta;
+
+class MyOrmTable implements DelegatedTableMeta
+{
+    // ... TableMeta methods (describe_columns, describe_column) ...
+
+    public function get_type_column(): ?string { return 'type'; }
+    public function get_type_path_column(): ?string { return 'type_path'; }
+    public function get_delegate_foreign_key(): string { return 'thing_id'; }
+    public function get_delegate_tables(): array
+    {
+        return [
+            'Book'  => $this->books_table,
+            'Movie' => $this->movies_table,
+        ];
+    }
+}
+```
+
+## Polymorphic Relations
+
+For polymorphic FK columns (e.g., `commentable_type` + `commentable_id`), implement `PolymorphicColumnMeta` on the ID column:
+
+```php
+<?php
+
+use Italix\Forms\Contracts\PolymorphicColumnMeta;
+
+class MyPolymorphicColumn implements PolymorphicColumnMeta
+{
+    // ... ColumnMeta methods ...
+
+    public function get_polymorphic_type_column(): string { return 'commentable_type'; }
+    public function get_polymorphic_targets(): array
+    {
+        return [
+            'post'  => $posts_table,
+            'video' => $videos_table,
+        ];
+    }
+}
+```
+
+FormHtml automatically renders dependent data attributes for JavaScript-driven type/ID switching.
 
 ## Sections and Layout
 
@@ -582,6 +700,8 @@ See the `examples/` directory for complete, runnable examples:
 | `09_custom_widget.php` | Registering a custom widget |
 | `10_field_by_field.php` | Individual field rendering for custom layout |
 | `11_json_export.php` | JSON metadata export for SPA frontends |
+| `12_delegated_types.php` | Delegated type forms (single, chain, wildcard) |
+| `13_polymorphic_relations.php` | Polymorphic FK with dependent fields |
 
 ## License
 
