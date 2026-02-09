@@ -10,6 +10,10 @@ namespace Italix\Forms\Contracts;
  * Any class that provides column information (from an ORM, database schema,
  * or custom definition) can implement this interface to be compatible with
  * the Italix Forms library.
+ *
+ * This is the minimal contract. For FK-aware columns, implement
+ * RelationalColumnMeta. For polymorphic FK columns, implement
+ * PolymorphicColumnMeta.
  */
 interface ColumnMeta
 {
@@ -62,13 +66,4 @@ interface ColumnMeta
      * @return bool
      */
     public function has_default(): bool;
-
-    /**
-     * Get foreign key relation metadata, if this column is a foreign key.
-     *
-     * Return null if this column is not a foreign key.
-     *
-     * @return RelationMeta|null
-     */
-    public function get_relation(): ?RelationMeta;
 }

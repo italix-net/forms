@@ -6,6 +6,7 @@ namespace Italix\Forms\Concerns;
 
 use Italix\Forms\Adapters\GenericRelationAdapter;
 use Italix\Forms\Contracts\ColumnMeta;
+use Italix\Forms\Contracts\RelationalColumnMeta;
 
 /**
  * Trait that provides TableMeta implementation from an array of columns.
@@ -77,9 +78,11 @@ trait TableMetaFromArray
         $this->relation_fetcher = $fetcher;
 
         foreach ($this->get_columns_for_description() as $column) {
-            $relation = $column->get_relation();
-            if ($relation instanceof GenericRelationAdapter) {
-                $relation->set_fetcher($fetcher);
+            if ($column instanceof RelationalColumnMeta) {
+                $relation = $column->get_relation();
+                if ($relation instanceof GenericRelationAdapter) {
+                    $relation->set_fetcher($fetcher);
+                }
             }
         }
 

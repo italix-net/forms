@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Rendering;
 
+use Italix\Forms\Contracts\PolymorphicColumnMeta;
+use Italix\Forms\Contracts\RelationalColumnMeta;
 use Italix\Forms\FieldMeta;
 use Italix\Forms\FormMeta;
 use Italix\Forms\FormSection;
@@ -433,6 +435,10 @@ class FormHtml
     /**
      * Auto-resolve FK relations to populate field options.
      *
+     * Uses instanceof checks to detect column capabilities:
+     * - RelationalColumnMeta: auto-populate select from FK
+     * - PolymorphicColumnMeta: set up dependent type+id field pair
+     *
      * @param FieldMeta $field
      */
     private function resolve_relation_options(FieldMeta $field): void
@@ -442,29 +448,58 @@ class FormHtml
             return;
         }
 
-        $relation = $field->column()->get_relation();
-        if ($relation === null) {
+        $column = $field->column();
+
+        // Polymorphic columns: set up data attributes for dependent fields
+        if ($column instanceof PolymorphicColumnMeta) {
+            $this->resolve_polymorphic_field($field, $column);
             return;
         }
 
-        $options = $relation->fetch_options();
-
-        if ($options !== null) {
-            $field->options($options);
-            // Use select if no explicit type was set
-            if ($field->get_type() === 'number' || $field->get_type() === 'text') {
-                $field->type('select');
+        // Relational columns: auto-populate select or autocomplete
+        if ($column instanceof RelationalColumnMeta) {
+            $relation = $column->get_relation();
+            if ($relation === null) {
+                return;
             }
-        } else {
-            // Too many options - set autocomplete data attributes
-            $field->type('text');
-            $field->attrs([
-                'data-autocomplete' => 'true',
-                'data-source-table' => $relation->get_foreign_table(),
-                'data-source-key' => $relation->get_foreign_key(),
-                'data-source-label' => $relation->get_foreign_label(),
-            ]);
+
+            $options = $relation->fetch_options();
+
+            if ($options !== null) {
+                $field->options($options);
+                // Use select if no explicit type was set
+                if ($field->get_type() === 'number' || $field->get_type() === 'text') {
+                    $field->type('select');
+                }
+            } else {
+                // Too many options - set autocomplete data attributes
+                $field->type('text');
+                $field->attrs([
+                    'data-autocomplete' => 'true',
+                    'data-source-table' => $relation->get_foreign_table(),
+                    'data-source-key' => $relation->get_foreign_key(),
+                    'data-source-label' => $relation->get_foreign_label(),
+                ]);
+            }
         }
+    }
+
+    /**
+     * Set up a polymorphic ID field with dependent-field data attributes.
+     *
+     * @param FieldMeta $field
+     * @param PolymorphicColumnMeta $column
+     */
+    private function resolve_polymorphic_field(FieldMeta $field, PolymorphicColumnMeta $column): void
+    {
+        $targets = $column->get_polymorphic_targets();
+        $type_column = $column->get_polymorphic_type_column();
+
+        $field->attrs([
+            'data-depends-on' => $type_column,
+            'data-polymorphic' => 'true',
+            'data-polymorphic-targets' => json_encode(array_keys($targets)),
+        ]);
     }
 
     // =========================================================================
