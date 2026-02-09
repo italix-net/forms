@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Adapters;
 
-use Italix\Forms\Contracts\RelationMeta;
+use Italix\Contracts\RelationMeta;
 
 /**
  * Generic adapter for foreign key relations.

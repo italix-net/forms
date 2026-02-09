@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Italix\Forms\Adapters;
 
-use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\ColumnMeta;
+use Italix\Contracts\TableMeta;
 
 /**
  * Generic adapter that wraps an array of column definitions as TableMeta.

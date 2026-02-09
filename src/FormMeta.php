@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Italix\Forms;
 
-use Italix\Forms\Contracts\DelegatedTableMeta;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\DelegatedTableMeta;
+use Italix\Contracts\TableMeta;
 use Generator;
 use InvalidArgumentException;
 use LogicException;

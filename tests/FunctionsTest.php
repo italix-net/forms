@@ -7,7 +7,7 @@ namespace Italix\Forms\Tests;
 use PHPUnit\Framework\TestCase;
 use Italix\Forms\FormMeta;
 use Italix\Forms\Adapters\GenericTableAdapter;
-use Italix\Forms\Contracts\TableMeta;
+use Italix\Contracts\TableMeta;
 
 use function Italix\Forms\form_meta;
 
@@ -128,7 +128,7 @@ class FunctionsTest extends TestCase
                 return $this->cols;
             }
 
-            public function describe_column(string $name): ?\Italix\Forms\Contracts\ColumnMeta
+            public function describe_column(string $name): ?\Italix\Contracts\ColumnMeta
             {
                 return $this->cols[$name] ?? null;
             }

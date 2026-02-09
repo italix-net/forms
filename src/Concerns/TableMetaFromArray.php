@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Italix\Forms\Concerns;
 
 use Italix\Forms\Adapters\GenericRelationAdapter;
-use Italix\Forms\Contracts\ColumnMeta;
-use Italix\Forms\Contracts\RelationalColumnMeta;
+use Italix\Contracts\ColumnMeta;
+use Italix\Contracts\RelationalColumnMeta;
 
 /**
  * Trait that provides TableMeta implementation from an array of columns.
