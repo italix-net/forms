@@ -28,11 +28,11 @@ class FunctionsTest extends TestCase
         $this->assertInstanceOf(FormMeta::class, $form);
 
         // Should be able to access fields
-        $nameField = $form->field('name');
-        $this->assertSame('name', $nameField->get_name());
-        $this->assertSame('VARCHAR', $nameField->column()->get_type());
-        $this->assertSame(100, $nameField->column()->get_length());
-        $this->assertFalse($nameField->column()->is_nullable());
+        $name_field = $form->field('name');
+        $this->assertSame('name', $name_field->get_name());
+        $this->assertSame('VARCHAR', $name_field->column()->get_type());
+        $this->assertSame(100, $name_field->column()->get_length());
+        $this->assertFalse($name_field->column()->is_nullable());
     }
 
     public function test_form_meta_from_array_creates_generic_table_adapter(): void

@@ -14,7 +14,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Italix\Forms\Rendering\FormHtml;
-use Italix\Forms\Validation\Rule;
+use Italix\Rules\Rule;
 use function Italix\Forms\form_meta;
 
 // Simulate a database: in real usage, the fetcher would query your database.
