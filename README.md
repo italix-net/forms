@@ -20,11 +20,11 @@ $form->field('email')
      ->rules(Rule::required(), Rule::email())
      ->group('identity');
 
-$form->field('subject_type')
+$form->field('account_type')
      ->label($t->get('form.type'))
      ->type('select')
-     ->options(['PER' => $t->get('form.person'), 'ORG' => $t->get('form.company')])
-     ->attrs(['x-model' => 'subject_type'])
+     ->options(['personal' => $t->get('form.personal'), 'business' => $t->get('form.business')])
+     ->attrs(['x-model' => 'account_type'])
      ->group('identity');
 
 $form->field('password')->sensitive();    // never leaves the process in any serialisation

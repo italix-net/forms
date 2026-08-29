@@ -1,5 +1,13 @@
 # Changelog — italix/forms
 
+## [2.3.1] — 2026-08-30
+
+### Fixed
+
+- README's quick-start example used `subject_type` with `PER`/`ORG` options — a field lifted
+  directly from the application this library was extracted from, not a neutral example. Replaced
+  with a generic `account_type` (`personal`/`business`) field carrying the same shape.
+
 ## [2.3.0] — 2026-08-29
 
 ### Added

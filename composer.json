@@ -3,7 +3,7 @@
     "description": "Form metadata and HTML rendering: FormMeta/FieldMeta descriptors, widgets, and adapters that build a form from a table schema",
     "type": "library",
     "license": "MPL-2.0",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "keywords": [
         "forms",
         "form-builder",
