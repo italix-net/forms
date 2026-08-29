@@ -1,11 +1,16 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 declare(strict_types=1);
 
 namespace Italix\Forms;
 
 use Italix\Contracts\ColumnMeta;
-use Italix\Forms\Validation\Rule;
+use Italix\Contracts\RuleMeta;
 use InvalidArgumentException;
 
 /**
@@ -21,7 +26,7 @@ use InvalidArgumentException;
  *         ->label('Email Address')
  *         ->placeholder('you@example.com')
  *         ->help('We will never share your email')
- *         ->rules(Rule::required(), Rule::email());
+ *         ->rules(Rule::required(), Rule::email());   // Italix\Rules\Rule
  */
 class FieldMeta
 {
@@ -88,27 +93,8 @@ class FieldMeta
     private $help_class = null;
 
     // Validation
-    /** @var Rule[] */
+    /** @var RuleMeta[] Carried, never executed — see Italix\Rules for the engine */
     private $rules = [];
-
-    /**
-     * Known built-in rule names for string parsing validation.
-     *
-     * @var array<string, bool>
-     */
-    private static $known_rules = [
-        'required' => true, 'email' => true, 'url' => true, 'numeric' => true,
-        'integer' => true, 'alpha' => true, 'alpha_num' => true, 'alpha_dash' => true,
-        'date' => true, 'file' => true, 'image' => true, 'min' => true, 'max' => true,
-        'min_length' => true, 'max_length' => true, 'length' => true, 'between' => true,
-        'length_between' => true, 'pattern' => true, 'in' => true, 'not_in' => true,
-        'confirmed' => true, 'same' => true, 'different' => true, 'date_format' => true,
-        'before' => true, 'after' => true, 'mimes' => true, 'max_file_size' => true,
-        'gt' => true, 'gte' => true, 'lt' => true, 'lte' => true,
-        'before_or_equal' => true, 'after_or_equal' => true,
-        'required_if' => true, 'required_unless' => true,
-        'unique' => true, 'exists' => true,
-    ];
 
     public function __construct(ColumnMeta $column)
     {
@@ -382,212 +368,45 @@ class FieldMeta
     // =========================================================================
 
     /**
-     * Add validation rules to the field.
+     * Attach validation rules to the field.
      *
-     * Accepts Rule objects or shorthand strings like 'required', 'email',
-     * 'max_length:255', etc.
+     * A rule is opaque here: FieldMeta stores it and hands it back through
+     * get_rules(), and never asks what it means. Building and executing rules
+     * belongs to italix/rules, which is why this takes the RuleMeta contract
+     * rather than any particular rule class.
      *
      * Example:
      *
      *     $field->rules(Rule::required(), Rule::email());
-     *     $field->rules('required', 'email', 'max_length:255');
      *
-     * @param Rule|string ...$rules
+     * Shorthand strings ('max_length:255') were parsed here until the rule
+     * vocabulary moved out; use Rule::parse('max_length:255') instead.
+     *
+     * @param RuleMeta ...$rules
      * @return self
-     * @throws InvalidArgumentException If a string rule is unknown or has invalid parameters
+     * @throws InvalidArgumentException If given something other than a RuleMeta
      */
     public function rules(...$rules): self
     {
         foreach ($rules as $rule) {
-            if ($rule instanceof Rule) {
+            if ($rule instanceof RuleMeta) {
                 $this->rules[] = $rule;
-            } elseif (is_string($rule)) {
-                $this->rules[] = $this->parse_rule_string($rule);
-            } else {
+                continue;
+            }
+
+            if (is_string($rule)) {
                 throw new InvalidArgumentException(
-                    'Rule must be a Rule instance or a string, got ' . gettype($rule)
+                    "Shorthand rule strings are no longer parsed by FieldMeta. "
+                    . "Use Rule::parse('{$rule}') from italix/rules instead."
                 );
             }
-        }
-        return $this;
-    }
 
-    /**
-     * Parse a rule string like 'max_length:255' into a Rule object.
-     *
-     * @param string $rule
-     * @return Rule
-     * @throws InvalidArgumentException If the rule name is unknown or parameters are invalid
-     */
-    private function parse_rule_string(string $rule): Rule
-    {
-        if (strpos($rule, ':') !== false) {
-            [$name, $paramStr] = explode(':', $rule, 2);
-            $params = explode(',', $paramStr);
-            // Filter out empty strings from params
-            $params = array_values(array_filter($params, fn($p) => $p !== ''));
-        } else {
-            $name = $rule;
-            $params = [];
-        }
-
-        if (!isset(self::$known_rules[$name])) {
             throw new InvalidArgumentException(
-                "Unknown rule '{$name}'. Use Rule::custom() for custom validation rules."
+                'Rule must implement Italix\\Contracts\\RuleMeta, got ' . gettype($rule)
             );
         }
 
-        switch ($name) {
-            // No-param rules
-            case 'required':
-                return Rule::required();
-            case 'email':
-                return Rule::email();
-            case 'url':
-                return Rule::url();
-            case 'numeric':
-                return Rule::numeric();
-            case 'integer':
-                return Rule::integer();
-            case 'alpha':
-                return Rule::alpha();
-            case 'alpha_num':
-                return Rule::alpha_num();
-            case 'alpha_dash':
-                return Rule::alpha_dash();
-            case 'date':
-                return Rule::date();
-            case 'file':
-                return Rule::file();
-            case 'image':
-                return Rule::image();
-
-            // Single numeric param
-            case 'min':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::min((float)$params[0]);
-            case 'max':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::max((float)$params[0]);
-            case 'min_length':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::min_length((int)$params[0]);
-            case 'max_length':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::max_length((int)$params[0]);
-            case 'length':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::length((int)$params[0]);
-            case 'max_file_size':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::max_file_size((int)$params[0]);
-
-            // Two numeric params
-            case 'between':
-                $this->assert_param_count($name, $params, 2);
-                return Rule::between((float)$params[0], (float)$params[1]);
-            case 'length_between':
-                $this->assert_param_count($name, $params, 2);
-                return Rule::length_between((int)$params[0], (int)$params[1]);
-
-            // Single string param
-            case 'pattern':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::pattern($params[0]);
-            case 'confirmed':
-                return Rule::confirmed($params[0] ?? 'confirmation');
-            case 'same':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::same($params[0]);
-            case 'different':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::different($params[0]);
-            case 'date_format':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::date_format($params[0]);
-            case 'before':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::before($params[0]);
-            case 'after':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::after($params[0]);
-            case 'before_or_equal':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::before_or_equal($params[0]);
-            case 'after_or_equal':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::after_or_equal($params[0]);
-
-            // Comparison rules (single param)
-            case 'gt':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::gt($params[0]);
-            case 'gte':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::gte($params[0]);
-            case 'lt':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::lt($params[0]);
-            case 'lte':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::lte($params[0]);
-
-            // Array-param rules
-            case 'in':
-                $this->assert_param_count($name, $params, 1, true);
-                return Rule::in($params);
-            case 'not_in':
-                $this->assert_param_count($name, $params, 1, true);
-                return Rule::not_in($params);
-            case 'mimes':
-                $this->assert_param_count($name, $params, 1, true);
-                return Rule::mimes($params);
-
-            // Two-param string rules (require_if, required_unless, unique, exists)
-            case 'required_if':
-                $this->assert_param_count($name, $params, 2);
-                return Rule::required_if($params[0], $params[1]);
-            case 'required_unless':
-                $this->assert_param_count($name, $params, 2);
-                return Rule::required_unless($params[0], $params[1]);
-            case 'unique':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::unique($params[0], $params[1] ?? null);
-            case 'exists':
-                $this->assert_param_count($name, $params, 1);
-                return Rule::exists($params[0], $params[1] ?? null);
-
-            default:
-                // This should never be reached due to the known_rules check above
-                throw new InvalidArgumentException("Unknown rule '{$name}'.");
-        }
-    }
-
-    /**
-     * Assert that a rule string has the required number of parameters.
-     *
-     * @param string $rule_name
-     * @param array $params
-     * @param int $min_count Minimum number of parameters required
-     * @param bool $at_least If true, requires at least $min_count params (for array rules)
-     * @throws InvalidArgumentException
-     */
-    private function assert_param_count(string $rule_name, array $params, int $min_count, bool $at_least = false): void
-    {
-        if ($at_least) {
-            if (count($params) < $min_count) {
-                throw new InvalidArgumentException(
-                    "Rule '{$rule_name}' requires at least {$min_count} parameter(s), got " . count($params) . "."
-                );
-            }
-        } else {
-            if (count($params) < $min_count) {
-                throw new InvalidArgumentException(
-                    "Rule '{$rule_name}' requires {$min_count} parameter(s), got " . count($params)
-                    . ". Use format: '{$rule_name}:" . implode(',', array_fill(0, $min_count, 'value')) . "'."
-                );
-            }
-        }
+        return $this;
     }
 
     // =========================================================================
@@ -677,9 +496,9 @@ class FieldMeta
     }
 
     /**
-     * Get the validation rules.
+     * Get the validation rules, exactly as they were attached.
      *
-     * @return Rule[]
+     * @return RuleMeta[]
      */
     public function get_rules(): array
     {
@@ -902,7 +721,7 @@ class FieldMeta
             'placeholder' => $this->get_placeholder(),
             'help' => $this->get_help(),
             'options' => $this->get_options(),
-            'rules' => array_map(fn(Rule $r) => $r->to_array(), $this->rules),
+            'rules' => array_map(fn(RuleMeta $r) => $r->to_array(), $this->rules),
             'required' => $this->is_required(),
             'hidden' => $this->is_hidden(),
             'readonly' => $this->is_readonly(),

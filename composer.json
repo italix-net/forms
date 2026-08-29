@@ -1,40 +1,43 @@
 {
     "name": "italix/forms",
-    "description": "Form metadata, validation, and layout library - works with any ORM or standalone",
+    "description": "Form metadata and HTML rendering: FormMeta/FieldMeta descriptors, widgets, and adapters that build a form from a table schema",
     "type": "library",
-    "license": "LGPL-3.0-or-later",
+    "license": "MPL-2.0",
+    "version": "2.2.1",
     "keywords": [
-        "form",
         "forms",
-        "validation",
-        "metadata",
+        "form-builder",
+        "html",
+        "widgets",
         "schema",
-        "orm",
-        "php"
+        "metadata"
     ],
+    "homepage": "https://github.com/italix-net/forms",
     "authors": [
         {
             "name": "Italix",
-            "homepage": "https://github.com/italix-net"
+            "email": "info@italix.net"
         }
     ],
-    "support": {
-        "issues": "https://github.com/italix-net/forms/issues",
-        "source": "https://github.com/italix-net/forms"
-    },
     "require": {
-        "php": "^7.4 || ^8.0",
-        "italix/contracts": "dev-main"
+        "php": ">=7.4",
+        "italix/contracts": "^2.0"
+    },
+    "suggest": {
+        "italix/rules": "Executes the rules a FieldMeta carries \u2014 Forms only transports them",
+        "italix/orm": "Build a form directly from a Table schema"
     },
     "require-dev": {
+        "italix/rules": "^4.0",
+        "italix/testing": "^2.0",
         "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
-            "Italix\\Forms\\": "src/"
+            "Italix\\Forms\\": ""
         },
         "files": [
-            "src/functions.php"
+            "functions.php"
         ]
     },
     "autoload-dev": {
@@ -42,18 +45,14 @@
             "Italix\\Forms\\Tests\\": "tests/"
         }
     },
-    "scripts": {
-        "test": "phpunit"
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/italix-net/contracts"
-        }
-    ]
+    "scripts": {
+        "test": [
+            "php tests/FormMetaTest.php",
+            "php tests/FormHtmlTest.php",
+            "php tests/DerivationTest.php"
+        ],
+        "test:phpunit": "phpunit"
+    }
 }

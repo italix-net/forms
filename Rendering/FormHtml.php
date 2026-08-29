@@ -1,4 +1,9 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 declare(strict_types=1);
 
@@ -62,6 +67,9 @@ class FormHtml
 
     /** @var bool */
     private $auto_resolve_relations = true;
+
+    /** @var array<string, string> Extra hidden fields injected inside the <form> tag */
+    private $hidden_fields = [];
 
     /**
      * @param FormMeta $form
@@ -185,6 +193,25 @@ class FormHtml
     }
 
     /**
+     * Inject a custom hidden <input> field into the rendered form.
+     *
+     * The field is emitted immediately after the <form> opening tag (and after
+     * any method-spoofing field), before the first visible field. Useful for
+     * embedding CSRF tokens or other metadata that must travel with the form.
+     *
+     * Multiple calls accumulate; the last value for a given name wins.
+     *
+     * @param string $name  The input name attribute
+     * @param string $value The input value (will be HTML-escaped on render)
+     * @return self
+     */
+    public function hidden(string $name, string $value): self
+    {
+        $this->hidden_fields[$name] = $value;
+        return $this;
+    }
+
+    /**
      * Enable or disable automatic FK relation resolution.
      *
      * When enabled (default), fields with FK relations and no manually
@@ -259,6 +286,11 @@ class FormHtml
         // Method spoofing for PUT, PATCH, DELETE
         if (!in_array($this->method, ['GET', 'POST'], true)) {
             $html .= '<input type="hidden" name="_method" value="' . $this->esc($this->method) . '">';
+        }
+
+        // Extra hidden fields (e.g. CSRF token) injected via hidden()
+        foreach ($this->hidden_fields as $h_name => $h_value) {
+            $html .= '<input type="hidden" name="' . $this->esc($h_name) . '" value="' . $this->esc($h_value) . '">';
         }
 
         return $html;
