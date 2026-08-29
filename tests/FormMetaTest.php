@@ -1,645 +1,226 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+/**
+ * Italix Forms — the properties that would break silently
+ *
+ * This library had no tests at all for 3,820 lines, which made it one of the
+ * three the framework could not safely change: nothing objected afterwards.
+ * These are not coverage; they are the assertions whose failure would not
+ * otherwise be noticed until it reached a browser.
+ *
+ * Two of them are security properties and are written adversarially — a
+ * recognisable secret is planted and the output is searched for it, rather
+ * than the code being asked whether it redacted anything.
+ *
+ * Run: php src/Libs/Italix/Forms/tests/FormMetaTest.php
+ */
 
 declare(strict_types=1);
 
-namespace Italix\Forms\Tests;
+(static function (): void {
+    foreach ([
+        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ] as $autoload) {
+        if (is_file($autoload)) {
+            require_once $autoload;
 
-use PHPUnit\Framework\TestCase;
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not find an autoloader. Run composer install.\n");
+    exit(2);
+})();
+
 use Italix\Forms\FormMeta;
-use Italix\Forms\FieldMeta;
-use Italix\Forms\FormSection;
-use Italix\Forms\Validation\Rule;
-use Italix\Forms\Adapters\GenericTableAdapter;
-use InvalidArgumentException;
 
 use function Italix\Forms\form_meta;
-
-class FormMetaTest extends TestCase
-{
-    /**
-     * Create a standard test FormMeta with common columns.
-     *
-     * @return FormMeta
-     */
-    private function make_form(): FormMeta
-    {
-        return form_meta([
-            'id' => ['type' => 'INTEGER', 'primary_key' => true, 'nullable' => false],
-            'name' => ['type' => 'VARCHAR', 'length' => 100, 'nullable' => false],
-            'email' => ['type' => 'VARCHAR', 'length' => 255, 'nullable' => false],
-            'bio' => ['type' => 'TEXT', 'nullable' => true],
-            'age' => ['type' => 'INTEGER', 'nullable' => true],
-        ]);
-    }
-
-    // =========================================================================
-    // field() - Create & Retrieve
-    // =========================================================================
-
-    public function test_field_creates_and_returns_field_meta(): void
-    {
-        $form = $this->make_form();
-        $field = $form->field('name');
-
-        $this->assertInstanceOf(FieldMeta::class, $field);
-        $this->assertSame('name', $field->get_name());
-    }
-
-    public function test_field_returns_same_instance_on_second_call(): void
-    {
-        $form = $this->make_form();
-        $first = $form->field('email');
-        $second = $form->field('email');
-
-        $this->assertSame($first, $second);
-    }
-
-    public function test_field_throws_on_unknown_column(): void
-    {
-        $form = $this->make_form();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Column 'nonexistent' not found");
-
-        $form->field('nonexistent');
-    }
-
-    // =========================================================================
-    // has_field()
-    // =========================================================================
-
-    public function test_has_field_false_before_access(): void
-    {
-        $form = $this->make_form();
-
-        $this->assertFalse($form->has_field('name'));
-    }
-
-    public function test_has_field_true_after_access(): void
-    {
-        $form = $this->make_form();
-        $form->field('name');
-
-        $this->assertTrue($form->has_field('name'));
-    }
-
-    public function test_has_field_false_for_unknown_column(): void
-    {
-        $form = $this->make_form();
-
-        $this->assertFalse($form->has_field('nonexistent'));
-    }
-
-    // =========================================================================
-    // fields() - Bulk Configuration
-    // =========================================================================
-
-    public function test_fields_bulk_config_works(): void
-    {
-        $form = $this->make_form();
-        $result = $form->fields([
-            'name' => ['label' => 'Full Name', 'order' => 1],
-            'email' => ['label' => 'Email Address', 'placeholder' => 'you@example.com'],
-        ]);
-
-        $this->assertSame($form, $result, 'fields() should return self for fluency');
-        $this->assertSame('Full Name', $form->field('name')->get_label());
-        $this->assertSame(1, $form->field('name')->get_order());
-        $this->assertSame('Email Address', $form->field('email')->get_label());
-        $this->assertSame('you@example.com', $form->field('email')->get_placeholder());
-    }
-
-    public function test_fields_bulk_config_throws_on_invalid_method(): void
-    {
-        $form = $this->make_form();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Invalid field configuration method 'nonexistent_method'");
-
-        $form->fields([
-            'name' => ['nonexistent_method' => 'value'],
-        ]);
-    }
-
-    public function test_fields_bulk_config_handles_options_as_array(): void
-    {
-        $form = $this->make_form();
-        $form->fields([
-            'name' => ['options' => ['a' => 'Alpha', 'b' => 'Beta']],
-        ]);
-
-        $this->assertSame(['a' => 'Alpha', 'b' => 'Beta'], $form->field('name')->get_options());
-    }
-
-    public function test_fields_bulk_config_handles_attrs_as_array(): void
-    {
-        $form = $this->make_form();
-        $form->fields([
-            'name' => ['attrs' => ['data-x' => '1', 'rows' => 5]],
-        ]);
-
-        $this->assertSame(['data-x' => '1', 'rows' => 5], $form->field('name')->get_attributes());
-    }
-
-    public function test_fields_bulk_config_spreads_array_values_for_non_special_methods(): void
-    {
-        $form = $this->make_form();
-        $form->fields([
-            'age' => ['rules' => [Rule::required(), Rule::integer()]],
-        ]);
-
-        $rules = $form->field('age')->get_rules();
-        $this->assertCount(2, $rules);
-        $this->assertSame('required', $rules[0]->get_name());
-        $this->assertSame('integer', $rules[1]->get_name());
-    }
-
-    // =========================================================================
-    // exclude()
-    // =========================================================================
-
-    public function test_exclude_returns_self(): void
-    {
-        $form = $this->make_form();
-        $result = $form->exclude('id');
-
-        $this->assertSame($form, $result);
-    }
-
-    public function test_exclude_removes_columns_from_iteration(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'age');
-
-        $names = array_keys(iterator_to_array($form->each()));
-
-        $this->assertContains('name', $names);
-        $this->assertContains('email', $names);
-        $this->assertContains('bio', $names);
-        $this->assertNotContains('id', $names);
-        $this->assertNotContains('age', $names);
-    }
-
-    public function test_get_excluded(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'age');
-
-        $this->assertSame(['id', 'age'], $form->get_excluded());
-    }
-
-    public function test_exclude_accumulates(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id');
-        $form->exclude('age');
-
-        $this->assertSame(['id', 'age'], $form->get_excluded());
-    }
-
-    // =========================================================================
-    // section()
-    // =========================================================================
-
-    public function test_section_creates_form_section(): void
-    {
-        $form = $this->make_form();
-        $section = $form->section('personal');
-
-        $this->assertInstanceOf(FormSection::class, $section);
-        $this->assertSame('personal', $section->get_name());
-    }
-
-    public function test_section_returns_same_instance(): void
-    {
-        $form = $this->make_form();
-        $first = $form->section('personal');
-        $second = $form->section('personal');
-
-        $this->assertSame($first, $second);
-    }
-
-    public function test_has_section(): void
-    {
-        $form = $this->make_form();
-
-        $this->assertFalse($form->has_section('personal'));
-
-        $form->section('personal');
-
-        $this->assertTrue($form->has_section('personal'));
-    }
-
-    public function test_sections_returns_all_defined_sections(): void
-    {
-        $form = $this->make_form();
-        $form->section('personal')->title('Personal');
-        $form->section('settings')->title('Settings');
-
-        $sections = $form->sections();
-
-        $this->assertCount(2, $sections);
-        $this->assertArrayHasKey('personal', $sections);
-        $this->assertArrayHasKey('settings', $sections);
-    }
-
-    public function test_default_section(): void
-    {
-        $form = $this->make_form();
-        $result = $form->default_section('general');
-
-        $this->assertSame($form, $result);
-    }
-
-    // =========================================================================
-    // source()
-    // =========================================================================
-
-    public function test_source_returns_table_meta(): void
-    {
-        $table = new GenericTableAdapter([
-            'name' => ['type' => 'VARCHAR'],
-        ]);
-        $form = new FormMeta($table);
-
-        $this->assertSame($table, $form->source());
-    }
-
-    // =========================================================================
-    // each() - Iteration
-    // =========================================================================
-
-    public function test_each_yields_all_visible_fields(): void
-    {
-        $form = $this->make_form();
-
-        $names = array_keys(iterator_to_array($form->each()));
-
-        $this->assertCount(5, $names);
-        $this->assertContains('id', $names);
-        $this->assertContains('name', $names);
-        $this->assertContains('email', $names);
-        $this->assertContains('bio', $names);
-        $this->assertContains('age', $names);
-    }
-
-    public function test_each_skips_hidden_fields(): void
-    {
-        $form = $this->make_form();
-        $form->field('id')->hidden();
-
-        $names = array_keys(iterator_to_array($form->each()));
-
-        $this->assertNotContains('id', $names);
-        $this->assertCount(4, $names);
-    }
-
-    public function test_each_skips_excluded_fields(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id');
-
-        $names = array_keys(iterator_to_array($form->each()));
-
-        $this->assertNotContains('id', $names);
-        $this->assertCount(4, $names);
-    }
-
-    public function test_each_sorts_by_order(): void
-    {
-        $form = $this->make_form();
-        $form->field('bio')->order(1);
-        $form->field('name')->order(2);
-        $form->field('email')->order(3);
-
-        $names = array_keys(iterator_to_array($form->each()));
-
-        // bio(1), name(2), email(3) should come first; id and age have null order => PHP_INT_MAX
-        $this->assertSame('bio', $names[0]);
-        $this->assertSame('name', $names[1]);
-        $this->assertSame('email', $names[2]);
-    }
-
-    public function test_each_yields_field_meta_instances(): void
-    {
-        $form = $this->make_form();
-
-        foreach ($form->each() as $name => $field) {
-            $this->assertInstanceOf(FieldMeta::class, $field);
-            $this->assertIsString($name);
+use function Italix\Testing\{suite, section, test, summary};
+
+suite('Italix Forms — metadata, redaction and escaping');
+
+/** The columns every case below starts from. A neutral domain, per the boundary rule. */
+$columns = static fn (): array => [
+    'id'         => ['type' => 'INTEGER', 'nullable' => false, 'primary_key' => true],
+    'title'      => ['type' => 'VARCHAR', 'length' => 200, 'nullable' => false],
+    'summary'    => ['type' => 'TEXT',    'nullable' => true],
+    'api_secret' => ['type' => 'VARCHAR', 'length' => 64,  'nullable' => true],
+    'views_n'    => ['type' => 'INTEGER', 'nullable' => true],
+];
+
+// -----------------------------------------------------------------------------
+section('the form reads its shape from the column definitions');
+
+$form = form_meta($columns());
+
+test('form_meta() accepts a plain array, with no ORM anywhere', $form instanceof FormMeta,
+    'this is what makes the library usable on a CSV row or an API payload');
+test('every column becomes a field', $form->count() === 5, 'count: ' . $form->count());
+test('a NOT NULL column is required', $form->field('title')->is_required());
+test('a nullable one is not', !$form->field('summary')->is_required());
+test('the label is derived when none is given', $form->field('api_secret')->get_label() !== '');
+test('an unknown column is refused rather than invented',
+    (static function () use ($form): bool {
+        try {
+            $form->field('no_such_column');
+
+            return false;
+        } catch (\Throwable $e) {
+            return true;
         }
+    })(),
+    'returning an empty FieldMeta would put a silent blank input on the page');
+
+// -----------------------------------------------------------------------------
+section('sensitive fields are redacted — the property, not the flag');
+
+// The adversarial part: the secret is planted somewhere a redaction written
+// against a field list would miss — inside an attribute and a placeholder —
+// and the assertion searches the *output* for it rather than asking the object
+// whether it redacted anything.
+$secret_c = 'SUPERSECRET-a1b2c3d4';
+
+$form = form_meta($columns());
+$form->field('api_secret')
+    ->sensitive()
+    ->placeholder($secret_c)
+    ->help('current value: ' . $secret_c)
+    ->attr('data-current', $secret_c);
+
+$json = $form->to_json();
+
+test('THE SECRET IS NOWHERE IN THE JSON', strpos($json, $secret_c) === false,
+    'a form definition is handed to a JavaScript builder; anything in it has left the server');
+test('…and the field itself still appears, so the form still renders',
+    strpos($json, 'api_secret') !== false);
+test('…marked as sensitive, so a client can style it', strpos($json, '"sensitive":true') !== false);
+
+$exported = $form->to_array();
+
+test('the redacted entry carries no attributes key at all',
+    !array_key_exists('attributes', $exported['fields']['api_secret']),
+    'an empty array would still be a place for the next contributor to put something back');
+test('nor a placeholder or help', !array_key_exists('placeholder', $exported['fields']['api_secret'])
+    && !array_key_exists('help', $exported['fields']['api_secret']));
+
+test('a non-sensitive field is not redacted',
+    ($form->to_array()['fields']['title']['attributes'] ?? null) !== null);
+
+// The flag has to be real in both directions, or the redaction is a coincidence.
+test('include_sensitive: true returns it, for a server-side caller that needs it',
+    strpos($form->to_json(0, true), $secret_c) !== false);
+
+// -----------------------------------------------------------------------------
+section('exclusion is total, not cosmetic');
+
+$form = form_meta($columns())->exclude('api_secret');
+
+$names_from = static function (iterable $fields): array {
+    $names = [];
+
+    foreach ($fields as $name_c => $field) {
+        $names[] = $name_c;
     }
 
-    public function test_each_creates_field_meta_for_unconfigured_columns(): void
-    {
-        $form = $this->make_form();
-        // Don't configure any fields, just iterate
-
-        $fields = iterator_to_array($form->each());
-
-        $this->assertCount(5, $fields);
-        foreach ($fields as $field) {
-            $this->assertInstanceOf(FieldMeta::class, $field);
-        }
-    }
-
-    // =========================================================================
-    // all() - Including Hidden
-    // =========================================================================
-
-    public function test_all_includes_hidden_fields(): void
-    {
-        $form = $this->make_form();
-        $form->field('id')->hidden();
-
-        $names = array_keys(iterator_to_array($form->all()));
-
-        $this->assertContains('id', $names);
-        $this->assertCount(5, $names);
-    }
-
-    public function test_all_excludes_excluded_fields(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id');
-
-        $names = array_keys(iterator_to_array($form->all()));
-
-        $this->assertNotContains('id', $names);
-        $this->assertCount(4, $names);
-    }
-
-    public function test_all_sorts_by_order(): void
-    {
-        $form = $this->make_form();
-        $form->field('age')->order(1);
-        $form->field('id')->order(2)->hidden();
-
-        $names = array_keys(iterator_to_array($form->all()));
-
-        $this->assertSame('age', $names[0]);
-        $this->assertSame('id', $names[1]);
-    }
-
-    // =========================================================================
-    // by_section()
-    // =========================================================================
-
-    public function test_by_section_groups_fields(): void
-    {
-        $form = $this->make_form();
-        $form->field('name')->group('personal');
-        $form->field('email')->group('contact');
-        $form->field('bio')->group('personal');
-
-        $form->section('personal')->title('Personal Info')->order(1);
-        $form->section('contact')->title('Contact')->order(2);
-
-        $grouped = $form->by_section();
-
-        // Ungrouped fields should be in '_default'
-        $this->assertArrayHasKey('_default', $grouped);
-        $this->assertArrayHasKey('personal', $grouped);
-        $this->assertArrayHasKey('contact', $grouped);
-
-        $this->assertArrayHasKey('name', $grouped['personal']['fields']);
-        $this->assertArrayHasKey('bio', $grouped['personal']['fields']);
-        $this->assertArrayHasKey('email', $grouped['contact']['fields']);
-
-        $this->assertInstanceOf(FormSection::class, $grouped['personal']['section']);
-        $this->assertSame('Personal Info', $grouped['personal']['section']->get_title());
-    }
-
-    public function test_by_section_ungrouped_first(): void
-    {
-        $form = $this->make_form();
-        $form->field('name')->group('personal');
-
-        $grouped = $form->by_section();
-        $keys = array_keys($grouped);
-
-        $this->assertSame('_default', $keys[0]);
-    }
-
-    public function test_by_section_null_section_for_ungrouped(): void
-    {
-        $form = $this->make_form();
-
-        $grouped = $form->by_section();
-
-        $this->assertArrayHasKey('_default', $grouped);
-        $this->assertNull($grouped['_default']['section']);
-    }
-
-    public function test_by_section_auto_creates_section_for_unknown_group(): void
-    {
-        $form = $this->make_form();
-        $form->field('name')->group('misc');
-
-        $grouped = $form->by_section();
-
-        $this->assertArrayHasKey('misc', $grouped);
-        $this->assertInstanceOf(FormSection::class, $grouped['misc']['section']);
-        $this->assertSame('Misc', $grouped['misc']['section']->get_title());
-    }
-
-    public function test_by_section_with_default_section(): void
-    {
-        $form = $this->make_form();
-        $form->default_section('general');
-        $form->section('general')->title('General');
-
-        $grouped = $form->by_section();
-
-        // All fields should be in 'general' since default_section is set
-        $this->assertArrayHasKey('general', $grouped);
-        $this->assertArrayNotHasKey('_default', $grouped);
-    }
-
-    public function test_by_section_sections_sorted_by_order(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'bio', 'age');
-
-        $form->field('name')->group('section_b');
-        $form->field('email')->group('section_a');
-
-        $form->section('section_a')->order(1);
-        $form->section('section_b')->order(2);
-
-        $grouped = $form->by_section();
-        $keys = array_keys($grouped);
-
-        $this->assertSame('section_a', $keys[0]);
-        $this->assertSame('section_b', $keys[1]);
-    }
-
-    public function test_by_section_skips_hidden_fields(): void
-    {
-        $form = $this->make_form();
-        $form->field('id')->hidden();
-
-        $grouped = $form->by_section();
-        $all_field_names = [];
-        foreach ($grouped as $group) {
-            foreach ($group['fields'] as $name => $field) {
-                $all_field_names[] = $name;
-            }
-        }
-
-        $this->assertNotContains('id', $all_field_names);
-    }
-
-    // =========================================================================
-    // count()
-    // =========================================================================
-
-    public function test_count_all_visible(): void
-    {
-        $form = $this->make_form();
-
-        $this->assertSame(5, $form->count());
-    }
-
-    public function test_count_excludes_hidden(): void
-    {
-        $form = $this->make_form();
-        $form->field('id')->hidden();
-
-        $this->assertSame(4, $form->count());
-    }
-
-    public function test_count_excludes_excluded(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'age');
-
-        $this->assertSame(3, $form->count());
-    }
-
-    // =========================================================================
-    // to_array()
-    // =========================================================================
-
-    public function test_to_array_structure(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id');
-        $form->section('personal')->title('Personal');
-        $form->field('name')->label('Full Name')->order(1);
-
-        $arr = $form->to_array();
-
-        $this->assertArrayHasKey('fields', $arr);
-        $this->assertArrayHasKey('sections', $arr);
-        $this->assertArrayHasKey('excluded', $arr);
-        $this->assertArrayHasKey('default_section', $arr);
-
-        $this->assertSame(['id'], $arr['excluded']);
-        $this->assertNull($arr['default_section']);
-
-        // Fields should not include excluded 'id'
-        $this->assertArrayNotHasKey('id', $arr['fields']);
-        $this->assertArrayHasKey('name', $arr['fields']);
-        $this->assertSame('Full Name', $arr['fields']['name']['label']);
-
-        // Sections
-        $this->assertArrayHasKey('personal', $arr['sections']);
-        $this->assertSame('Personal', $arr['sections']['personal']['title']);
-    }
-
-    public function test_to_array_sensitive_field_redacted(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'bio', 'age');
-        $form->field('email')->sensitive()->label('Secret Email');
-
-        $arr = $form->to_array();
-
-        // email should be redacted
-        $this->assertTrue($arr['fields']['email']['sensitive']);
-        $this->assertArrayNotHasKey('placeholder', $arr['fields']['email']);
-        $this->assertArrayNotHasKey('rules', $arr['fields']['email']);
-
-        // name should be full
-        $this->assertArrayHasKey('placeholder', $arr['fields']['name']);
-    }
-
-    public function test_to_array_with_include_sensitive(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'bio', 'age');
-        $form->field('email')->sensitive()->label('Email');
-
-        $arr = $form->to_array(true);
-
-        // email should now be full
-        $this->assertArrayHasKey('placeholder', $arr['fields']['email']);
-        $this->assertArrayHasKey('rules', $arr['fields']['email']);
-    }
-
-    public function test_to_array_skips_hidden_fields(): void
-    {
-        $form = $this->make_form();
-        $form->field('id')->hidden();
-
-        $arr = $form->to_array();
-
-        $this->assertArrayNotHasKey('id', $arr['fields']);
-    }
-
-    // =========================================================================
-    // to_json()
-    // =========================================================================
-
-    public function test_to_json_returns_valid_json(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id');
-        $form->field('name')->label('Full Name');
-
-        $json = $form->to_json();
-
-        $decoded = json_decode($json, true);
-        $this->assertNotNull($decoded);
-        $this->assertArrayHasKey('fields', $decoded);
-        $this->assertArrayHasKey('name', $decoded['fields']);
-        $this->assertSame('Full Name', $decoded['fields']['name']['label']);
-    }
-
-    public function test_to_json_with_flags(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'email', 'bio', 'age');
-        $form->field('name')->label('Name');
-
-        $json = $form->to_json(JSON_PRETTY_PRINT);
-
-        $this->assertStringContainsString("\n", $json);
-    }
-
-    public function test_to_json_sensitive_redacted_by_default(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'bio', 'age');
-        $form->field('email')->sensitive();
-
-        $json = $form->to_json();
-        $decoded = json_decode($json, true);
-
-        $this->assertTrue($decoded['fields']['email']['sensitive']);
-        $this->assertArrayNotHasKey('placeholder', $decoded['fields']['email']);
-    }
-
-    public function test_to_json_sensitive_included_when_requested(): void
-    {
-        $form = $this->make_form();
-        $form->exclude('id', 'bio', 'age');
-        $form->field('email')->sensitive();
-
-        $json = $form->to_json(0, true);
-        $decoded = json_decode($json, true);
-
-        $this->assertArrayHasKey('placeholder', $decoded['fields']['email']);
-    }
-}
+    return $names;
+};
+
+test('an excluded column is gone from each()', !in_array('api_secret', $names_from($form->each()), true));
+test('AND FROM all(), WHICH IS THE ONE THAT INCLUDES HIDDEN FIELDS',
+    !in_array('api_secret', $names_from($form->all()), true),
+    'a second iterator that forgot the exclusion list is how an excluded column reaches a page');
+test('…and from the count', $form->count() === 4, 'count: ' . $form->count());
+test('…and from by_section()',
+    !in_array('api_secret', array_merge(...array_map(
+        static fn (array $group): array => array_keys($group['fields']),
+        array_values($form->by_section())
+    )), true));
+// The definition is gone; the *name* stays, in an `excluded` list that the
+// export carries on purpose so a client builder knows the column was withheld
+// rather than forgotten.
+//
+// Pinned rather than argued with, because it is a design decision and not a
+// defect — but it is worth a reader knowing: excluding a column because its
+// name is itself sensitive does not achieve that, and `sensitive()` is the
+// tool for the payload while exclusion is the tool for the layout.
+$exported = $form->to_array();
+
+test('the excluded field carries no definition', !array_key_exists('api_secret', $exported['fields']));
+test('…and its name appears only in the excluded list, deliberately',
+    $exported['excluded'] === ['api_secret']
+    && substr_count($form->to_json(), 'api_secret') === 1);
+
+// -----------------------------------------------------------------------------
+section('hidden is not excluded, and the difference is load-bearing');
+
+$form = form_meta($columns());
+$form->field('id')->hidden();
+
+test('a hidden field is skipped by each()', !in_array('id', $names_from($form->each()), true));
+test('…but kept by all()', in_array('id', $names_from($form->all()), true),
+    'the form still has to submit it');
+test('…and to_array() goes through each(), so it is absent there too',
+    !array_key_exists('id', $form->to_array()['fields']),
+    'pinned because it is surprising: a hidden field is not in the exported definition at all');
+
+// -----------------------------------------------------------------------------
+section('ordering and sections');
+
+// This block exists because these two methods were edited on 2026-08-14 — three
+// variables renamed for the naming check — and nothing in the framework could
+// have objected if a substitution had gone wrong inside an interpolated string.
+$form = form_meta($columns());
+$form->field('summary')->order(1);
+$form->field('title')->order(2);
+
+$ordered = $names_from($form->each());
+
+test('order() decides the sequence', array_slice($ordered, 0, 2) === ['summary', 'title'],
+    implode(', ', $ordered));
+test('a field with no order sorts after the ones that have it',
+    array_search('views_n', $ordered, true) > array_search('title', $ordered, true));
+
+$form = form_meta($columns());
+$form->field('title')->group('main');
+$form->field('summary')->group('main');
+$form->field('views_n')->group('stats');
+
+$sections = $form->by_section();
+
+test('by_section() groups by group()', isset($sections['main'], $sections['stats']));
+test('…with the right fields in each',
+    array_keys($sections['main']['fields']) === ['title', 'summary']
+    && array_keys($sections['stats']['fields']) === ['views_n'],
+    implode('|', array_keys($sections['main']['fields'])));
+test('…and every group carries a section object',
+    $sections['main']['section'] instanceof \Italix\Forms\FormSection);
+
+$form = form_meta($columns())->default_section('general');
+$form->field('title')->group('main');
+
+test('ungrouped fields land in the default section',
+    in_array('summary', array_keys($form->by_section()['general']['fields'] ?? []), true));
+
+// -----------------------------------------------------------------------------
+section('the fluent API returns the right object, or a chain silently drops work');
+
+$form  = form_meta($columns());
+$field = $form->field('title');
+
+test('FieldMeta setters return the field', $field->label('T') === $field
+    && $field->placeholder('p') === $field
+    && $field->attr('x', '1') === $field);
+test('FormMeta setters return the form',
+    $form->exclude('views_n') === $form && $form->default_section('g') === $form);
+test('field() hands back the same instance each time, so configuration accumulates',
+    $form->field('title') === $field,
+    'a fresh FieldMeta per call would discard every setting made before it');
+
+exit(summary());

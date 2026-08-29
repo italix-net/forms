@@ -16,7 +16,7 @@ use Italix\Contracts\DelegatedTableMeta;
 use Italix\Contracts\TableMeta;
 use Italix\Forms\FormMeta;
 use Italix\Forms\Rendering\FormHtml;
-use Italix\Forms\Validation\Rule;
+use Italix\Rules\Rule;
 
 // ============================================================================
 // Stub Classes

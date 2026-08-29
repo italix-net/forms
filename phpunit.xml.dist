@@ -13,7 +13,12 @@
     </testsuites>
     <coverage processUncoveredFiles="true">
         <include>
-            <directory suffix=".php">src</directory>
+            <directory suffix=".php">.</directory>
         </include>
+        <exclude>
+            <directory>tests</directory>
+            <directory>examples</directory>
+            <directory>vendor</directory>
+        </exclude>
     </coverage>
 </phpunit>

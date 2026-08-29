@@ -12,7 +12,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Italix\Forms\Rendering\FormHtml;
-use Italix\Forms\Validation\Rule;
+use Italix\Rules\Rule;
 use function Italix\Forms\form_meta;
 
 // 1. Define columns -- file columns are just VARCHAR (they store the file path).

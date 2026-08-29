@@ -1,4 +1,9 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 declare(strict_types=1);
 
@@ -525,9 +530,9 @@ class FormMeta
         }
 
         uasort($visible, function (FieldMeta $a, FieldMeta $b): int {
-            $orderA = $a->get_order() ?? PHP_INT_MAX;
-            $orderB = $b->get_order() ?? PHP_INT_MAX;
-            return $orderA <=> $orderB;
+            $order_a = $a->get_order() ?? PHP_INT_MAX;
+            $order_b = $b->get_order() ?? PHP_INT_MAX;
+            return $order_a <=> $order_b;
         });
 
         foreach ($visible as $name => $meta) {
@@ -554,9 +559,9 @@ class FormMeta
         }
 
         uasort($result, function (FieldMeta $a, FieldMeta $b): int {
-            $orderA = $a->get_order() ?? PHP_INT_MAX;
-            $orderB = $b->get_order() ?? PHP_INT_MAX;
-            return $orderA <=> $orderB;
+            $order_a = $a->get_order() ?? PHP_INT_MAX;
+            $order_b = $b->get_order() ?? PHP_INT_MAX;
+            return $order_a <=> $order_b;
         });
 
         foreach ($result as $name => $meta) {
@@ -599,16 +604,16 @@ class FormMeta
         $ungrouped = [];
 
         foreach ($this->each() as $name => $field) {
-            $sectionName = $field->get_group() ?? $this->default_section;
+            $section_c = $field->get_group() ?? $this->default_section;
 
-            if ($sectionName !== null) {
-                if (!isset($result[$sectionName])) {
-                    $result[$sectionName] = [
-                        'section' => $this->sections[$sectionName] ?? new FormSection($sectionName),
+            if ($section_c !== null) {
+                if (!isset($result[$section_c])) {
+                    $result[$section_c] = [
+                        'section' => $this->sections[$section_c] ?? new FormSection($section_c),
                         'fields' => [],
                     ];
                 }
-                $result[$sectionName]['fields'][$name] = $field;
+                $result[$section_c]['fields'][$name] = $field;
             } else {
                 $ungrouped[$name] = $field;
             }
