@@ -1,5 +1,8 @@
 # Italix Forms
 
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D7.4-8892BF.svg)](https://php.net/)
+[![License](https://img.shields.io/badge/license-MPL%202.0-blue.svg)](LICENSE)
+
 Form metadata over a table schema, and HTML rendering for it. You describe the *form* — labels,
 sections, widgets, rules — and the *fields* come from whatever already knows your columns.
 
