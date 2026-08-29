@@ -1,5 +1,24 @@
 # Changelog — italix/forms
 
+## [2.3.0] — 2026-08-29
+
+### Added
+
+- A PHPUnit test suite (`FunctionsTest`, `FormSectionTest`, `WidgetRegistryTest`, `RelationTest`,
+  `GenericAdapterTest`, `WidgetTest`, `DelegationTest`, plus a trimmed `FieldMetaTest`) and 13
+  `examples/*.php` walkthroughs, harvested from an earlier, independently-published iteration of
+  this package on GitHub and reconciled against this library's real, currently-released code.
+  Run via `composer test:phpunit` alongside the existing `composer test` suite.
+
+### Fixed
+
+- That earlier iteration had reinvented a standalone `Validation\Rule` engine, not knowing
+  `italix/rules` already existed in this tree — discarded before merging, along with its
+  dedicated test and every example's import, repointed at the real `Italix\Rules\Rule`.
+- `FieldMetaTest.php`'s ~35 tests for shorthand rule-string parsing tested behavior this library
+  no longer has (`FieldMeta::rules()` throws on a string rather than parsing it, since 2.0.0) —
+  replaced with two tests against the real current exception.
+
 ## [2.2.1] — 2026-08-28
 
 ### Changed
