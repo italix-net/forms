@@ -85,18 +85,18 @@ section('sensitive fields are redacted — the property, not the flag');
 // against a field list would miss — inside an attribute and a placeholder —
 // and the assertion searches the *output* for it rather than asking the object
 // whether it redacted anything.
-$secret_c = 'SUPERSECRET-a1b2c3d4';
+$secret_tk = 'SUPERSECRET-a1b2c3d4';
 
 $form = form_meta($columns());
 $form->field('api_secret')
     ->sensitive()
-    ->placeholder($secret_c)
-    ->help('current value: ' . $secret_c)
-    ->attr('data-current', $secret_c);
+    ->placeholder($secret_tk)
+    ->help('current value: ' . $secret_tk)
+    ->attr('data-current', $secret_tk);
 
 $json = $form->to_json();
 
-test('THE SECRET IS NOWHERE IN THE JSON', strpos($json, $secret_c) === false,
+test('THE SECRET IS NOWHERE IN THE JSON', strpos($json, $secret_tk) === false,
     'a form definition is handed to a JavaScript builder; anything in it has left the server');
 test('…and the field itself still appears, so the form still renders',
     strpos($json, 'api_secret') !== false);
@@ -115,7 +115,7 @@ test('a non-sensitive field is not redacted',
 
 // The flag has to be real in both directions, or the redaction is a coincidence.
 test('include_sensitive: true returns it, for a server-side caller that needs it',
-    strpos($form->to_json(0, true), $secret_c) !== false);
+    strpos($form->to_json(0, true), $secret_tk) !== false);
 
 // -----------------------------------------------------------------------------
 section('exclusion is total, not cosmetic');

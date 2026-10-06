@@ -451,18 +451,10 @@ class FieldMetaTest extends TestCase
         $this->assertTrue($field->is_required());
     }
 
-    public function test_is_required_true_for_nullable_with_string_required_rule(): void
-    {
-        $field = $this->make_field('bio', 'TEXT', true);
-        $field->rules('required');
-
-        $this->assertTrue($field->is_required());
-    }
-
     public function test_is_required_false_for_nullable_with_non_required_rules(): void
     {
         $field = $this->make_field('bio', 'TEXT', true);
-        $field->rules('email', 'max_length:255');
+        $field->rules(Rule::email(), Rule::max_length(255));
 
         $this->assertFalse($field->is_required());
     }
