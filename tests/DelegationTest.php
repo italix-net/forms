@@ -1,10 +1,21 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+/**
+ * Italix Forms — delegated types
+ *
+ * Written as an xUnit class; runs on the shared runner (`Italix\Testing\Runner`) through XunitCase.
+ *
+ * Run: php src/Libs/Italix/Forms/tests/DelegationTest.php
+ */
 
 declare(strict_types=1);
 
 namespace Italix\Forms\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Italix\Contracts\ColumnMeta;
 use Italix\Contracts\DelegatedTableMeta;
 use Italix\Contracts\PolymorphicColumnMeta;
@@ -24,6 +35,27 @@ use LogicException;
 /**
  * Minimal ColumnMeta implementation for testing.
  */
+(static function (): void {
+    foreach ([
+        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ] as $autoload) {
+        if (is_file($autoload)) {
+            require_once $autoload;
+
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not find an autoloader. Run composer install.
+");
+    exit(2);
+})();
+
+require_once __DIR__ . '/XunitCase.php';
+
 class StubColumn implements ColumnMeta
 {
     /** @var string */
@@ -382,7 +414,8 @@ class StubRelation implements RelationMeta
 // Test Helpers
 // =============================================================================
 
-class DelegationTest extends TestCase
+
+class DelegationTest extends XunitCase
 {
     // =========================================================================
     // Factory helpers
@@ -559,8 +592,8 @@ class DelegationTest extends TestCase
         $names = $this->all_field_names($form);
 
         // Book-specific columns should be present
-        $this->assertContains('isbn', $names);
-        $this->assertContains('page_count', $names);
+        $this->assert_in('isbn', $names);
+        $this->assert_in('page_count', $names);
     }
 
     public function test_delegate_hides_type_column(): void
@@ -570,7 +603,7 @@ class DelegationTest extends TestCase
 
         $visible = $this->visible_field_names($form);
 
-        $this->assertNotContains('type', $visible);
+        $this->assert_not_in('type', $visible);
     }
 
     public function test_delegate_hides_type_path_column(): void
@@ -580,7 +613,7 @@ class DelegationTest extends TestCase
 
         $visible = $this->visible_field_names($form);
 
-        $this->assertNotContains('type_path', $visible);
+        $this->assert_not_in('type_path', $visible);
     }
 
     public function test_delegate_hides_fk_column(): void
@@ -591,7 +624,7 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // book.thing_id should be hidden
-        $this->assertNotContains('thing_id', $visible);
+        $this->assert_not_in('thing_id', $visible);
     }
 
     public function test_delegate_hides_pk_column(): void
@@ -606,7 +639,7 @@ class DelegationTest extends TestCase
         // Let's check that the book's "id" is hidden by confirming it's in all() but
         // that its field is hidden.
         $all = $this->all_field_names($form);
-        $this->assertContains('id', $all);
+        $this->assert_in('id', $all);
 
         // The delegate book.id would collide with root id; let's verify the
         // delegate PK column is registered as hidden via field_meta.
@@ -615,7 +648,7 @@ class DelegationTest extends TestCase
         // auto-hidden by delegation, so let's verify the behavior:
         // Root 'id' is a PK but FormMeta does NOT auto-hide root PKs;
         // the delegate's 'id' (book.id) would overwrite root 'id' in field_meta as hidden.
-        $this->assertNotContains('id', $visible);
+        $this->assert_not_in('id', $visible);
     }
 
     public function test_delegate_preserves_source_fields(): void
@@ -626,7 +659,7 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // Root's 'title' should remain visible
-        $this->assertContains('title', $visible);
+        $this->assert_in('title', $visible);
     }
 
     public function test_delegate_fields_are_configurable(): void
@@ -637,7 +670,7 @@ class DelegationTest extends TestCase
         $field = $form->field('isbn');
         $field->label('ISBN');
 
-        $this->assertSame('ISBN', $field->get_label());
+        $this->assert_same('ISBN', $field->get_label());
     }
 
     public function test_delegate_on_non_delegated_throws(): void
@@ -648,8 +681,8 @@ class DelegationTest extends TestCase
         ]);
         $form = new FormMeta($plain_table);
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('DelegatedTableMeta');
+        $this->expect_exception(LogicException::class);
+        $this->expect_exception_message('DelegatedTableMeta');
 
         $form->delegate('Something');
     }
@@ -658,8 +691,8 @@ class DelegationTest extends TestCase
     {
         $form = new FormMeta($this->make_things_table());
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Delegate type 'UnknownType' not found");
+        $this->expect_exception(InvalidArgumentException::class);
+        $this->expect_exception_message("Delegate type 'UnknownType' not found");
 
         $form->delegate('UnknownType');
     }
@@ -673,8 +706,8 @@ class DelegationTest extends TestCase
             $this->fail('Expected InvalidArgumentException');
         } catch (InvalidArgumentException $e) {
             $message = $e->getMessage();
-            $this->assertStringContainsString('Book', $message);
-            $this->assertStringContainsString('Movie', $message);
+            $this->assert_contains_string('Book', $message);
+            $this->assert_contains_string('Movie', $message);
         }
     }
 
@@ -695,7 +728,7 @@ class DelegationTest extends TestCase
 
         // The chain should be: [Book (delegated), ComicsBook]
         $chain = $form->get_delegate_chain();
-        $this->assertCount(2, $chain);
+        $this->assert_count(2, $chain);
     }
 
     public function test_delegate_two_level_merges_all_columns(): void
@@ -712,13 +745,13 @@ class DelegationTest extends TestCase
         $all = $this->all_field_names($form);
 
         // Root columns
-        $this->assertContains('title', $all);
+        $this->assert_in('title', $all);
         // Book columns
-        $this->assertContains('isbn', $all);
-        $this->assertContains('page_count', $all);
+        $this->assert_in('isbn', $all);
+        $this->assert_in('page_count', $all);
         // ComicsBook columns
-        $this->assertContains('illustrator', $all);
-        $this->assertContains('color', $all);
+        $this->assert_in('illustrator', $all);
+        $this->assert_in('color', $all);
     }
 
     public function test_delegate_two_level_hides_intermediate_fk(): void
@@ -735,7 +768,7 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // book.thing_id should be hidden
-        $this->assertNotContains('thing_id', $visible);
+        $this->assert_not_in('thing_id', $visible);
     }
 
     public function test_delegate_two_level_hides_leaf_fk(): void
@@ -752,7 +785,7 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // comics_book.book_id should be hidden
-        $this->assertNotContains('book_id', $visible);
+        $this->assert_not_in('book_id', $visible);
     }
 
     public function test_delegate_two_level_hides_intermediate_type_cols(): void
@@ -769,8 +802,8 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // Book's own book_type and book_type_path should be hidden
-        $this->assertNotContains('book_type', $visible);
-        $this->assertNotContains('book_type_path', $visible);
+        $this->assert_not_in('book_type', $visible);
+        $this->assert_not_in('book_type_path', $visible);
     }
 
     public function test_delegate_resolves_three_level_chain(): void
@@ -819,11 +852,11 @@ class DelegationTest extends TestCase
         $form->delegate('MangaBook');
 
         $chain = $form->get_delegate_chain();
-        $this->assertCount(3, $chain);
+        $this->assert_count(3, $chain);
 
         $visible = $this->visible_field_names($form);
-        $this->assertContains('is_right_to_left', $visible);
-        $this->assertContains('title', $visible);
+        $this->assert_in('is_right_to_left', $visible);
+        $this->assert_in('title', $visible);
     }
 
     // =========================================================================
@@ -837,11 +870,11 @@ class DelegationTest extends TestCase
 
         $type_field = $form->field('type');
 
-        $this->assertSame('select', $type_field->get_type());
+        $this->assert_same('select', $type_field->get_type());
 
         $options = $type_field->get_options();
-        $this->assertArrayHasKey('Book', $options);
-        $this->assertArrayHasKey('Movie', $options);
+        $this->assert_has_key('Book', $options);
+        $this->assert_has_key('Movie', $options);
     }
 
     public function test_wildcard_hides_type_path(): void
@@ -851,7 +884,7 @@ class DelegationTest extends TestCase
 
         $visible = $this->visible_field_names($form);
 
-        $this->assertNotContains('type_path', $visible);
+        $this->assert_not_in('type_path', $visible);
     }
 
     public function test_wildcard_includes_all_delegate_columns(): void
@@ -862,11 +895,11 @@ class DelegationTest extends TestCase
         $all = $this->all_field_names($form);
 
         // Book columns
-        $this->assertContains('isbn', $all);
-        $this->assertContains('page_count', $all);
+        $this->assert_in('isbn', $all);
+        $this->assert_in('page_count', $all);
         // Movie columns
-        $this->assertContains('duration', $all);
-        $this->assertContains('director', $all);
+        $this->assert_in('duration', $all);
+        $this->assert_in('director', $all);
     }
 
     public function test_wildcard_columns_have_data_delegate_type_attr(): void
@@ -876,13 +909,13 @@ class DelegationTest extends TestCase
 
         // Book's columns should have data-delegate-type = 'Book'
         $isbn_attrs = $form->field('isbn')->get_attributes();
-        $this->assertArrayHasKey('data-delegate-type', $isbn_attrs);
-        $this->assertSame('Book', $isbn_attrs['data-delegate-type']);
+        $this->assert_has_key('data-delegate-type', $isbn_attrs);
+        $this->assert_same('Book', $isbn_attrs['data-delegate-type']);
 
         // Movie's columns should have data-delegate-type = 'Movie'
         $director_attrs = $form->field('director')->get_attributes();
-        $this->assertArrayHasKey('data-delegate-type', $director_attrs);
-        $this->assertSame('Movie', $director_attrs['data-delegate-type']);
+        $this->assert_has_key('data-delegate-type', $director_attrs);
+        $this->assert_same('Movie', $director_attrs['data-delegate-type']);
     }
 
     public function test_wildcard_skips_pk_and_fk(): void
@@ -893,7 +926,7 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // Delegate PKs and FKs should not appear
-        $this->assertNotContains('thing_id', $visible);
+        $this->assert_not_in('thing_id', $visible);
         // The book/movie 'id' (PK) should be skipped in wildcard registration
         // Only the root 'id' should be present
     }
@@ -906,7 +939,7 @@ class DelegationTest extends TestCase
     {
         $form = new FormMeta($this->make_things_table());
 
-        $this->assertNull($form->get_delegate_type());
+        $this->assert_null($form->get_delegate_type());
     }
 
     public function test_get_delegate_type_returns_type_after_delegate(): void
@@ -914,14 +947,14 @@ class DelegationTest extends TestCase
         $form = new FormMeta($this->make_things_table());
         $form->delegate('Book');
 
-        $this->assertSame('Book', $form->get_delegate_type());
+        $this->assert_same('Book', $form->get_delegate_type());
     }
 
     public function test_get_delegate_chain_empty_before_delegate(): void
     {
         $form = new FormMeta($this->make_things_table());
 
-        $this->assertEmpty($form->get_delegate_chain());
+        $this->assert_empty($form->get_delegate_chain());
     }
 
     public function test_get_delegate_chain_has_tables_after_delegate(): void
@@ -930,8 +963,8 @@ class DelegationTest extends TestCase
         $form->delegate('Book');
 
         $chain = $form->get_delegate_chain();
-        $this->assertCount(1, $chain);
-        $this->assertInstanceOf(TableMeta::class, $chain[0]);
+        $this->assert_count(1, $chain);
+        $this->assert_instance_of(TableMeta::class, $chain[0]);
     }
 
     // =========================================================================
@@ -946,9 +979,9 @@ class DelegationTest extends TestCase
 
         $visible = $this->visible_field_names($form);
 
-        $this->assertNotContains('isbn', $visible);
-        $this->assertContains('page_count', $visible);
-        $this->assertContains('title', $visible);
+        $this->assert_not_in('isbn', $visible);
+        $this->assert_in('page_count', $visible);
+        $this->assert_in('title', $visible);
     }
 
     public function test_delegate_with_sections(): void
@@ -962,9 +995,9 @@ class DelegationTest extends TestCase
 
         $grouped = $form->by_section();
 
-        $this->assertArrayHasKey('book_info', $grouped);
-        $this->assertArrayHasKey('isbn', $grouped['book_info']['fields']);
-        $this->assertArrayHasKey('page_count', $grouped['book_info']['fields']);
+        $this->assert_has_key('book_info', $grouped);
+        $this->assert_has_key('isbn', $grouped['book_info']['fields']);
+        $this->assert_has_key('page_count', $grouped['book_info']['fields']);
     }
 
     public function test_delegate_with_field_config(): void
@@ -977,9 +1010,9 @@ class DelegationTest extends TestCase
             'page_count' => ['label' => 'Pages'],
         ]);
 
-        $this->assertSame('ISBN Number', $form->field('isbn')->get_label());
-        $this->assertSame('978-...', $form->field('isbn')->get_placeholder());
-        $this->assertSame('Pages', $form->field('page_count')->get_label());
+        $this->assert_same('ISBN Number', $form->field('isbn')->get_label());
+        $this->assert_same('978-...', $form->field('isbn')->get_placeholder());
+        $this->assert_same('Pages', $form->field('page_count')->get_label());
     }
 
     public function test_delegate_to_array_includes_delegate_fields(): void
@@ -990,12 +1023,12 @@ class DelegationTest extends TestCase
         $arr = $form->to_array();
 
         // Visible delegate fields should appear
-        $this->assertArrayHasKey('isbn', $arr['fields']);
-        $this->assertArrayHasKey('page_count', $arr['fields']);
+        $this->assert_has_key('isbn', $arr['fields']);
+        $this->assert_has_key('page_count', $arr['fields']);
 
         // Hidden glue columns should NOT appear (hidden fields excluded from to_array)
-        $this->assertArrayNotHasKey('type', $arr['fields']);
-        $this->assertArrayNotHasKey('type_path', $arr['fields']);
+        $this->assert_not_has_key('type', $arr['fields']);
+        $this->assert_not_has_key('type_path', $arr['fields']);
     }
 
     public function test_delegate_count_includes_delegate_fields(): void
@@ -1008,8 +1041,8 @@ class DelegationTest extends TestCase
         $count = $form->count();
 
         $visible = $this->visible_field_names($form);
-        $this->assertSame(count($visible), $count);
-        $this->assertGreaterThanOrEqual(3, $count);
+        $this->assert_same(count($visible), $count);
+        $this->assert_at_least(3, $count);
     }
 
     // =========================================================================
@@ -1026,15 +1059,15 @@ class DelegationTest extends TestCase
             ->values(['title' => 'My Book', 'isbn' => '978-0-123'])
             ->fields();
 
-        $this->assertStringContainsString('name="isbn"', $html);
-        $this->assertStringContainsString('name="page_count"', $html);
-        $this->assertStringContainsString('name="title"', $html);
-        $this->assertStringContainsString('978-0-123', $html);
+        $this->assert_contains_string('name="isbn"', $html);
+        $this->assert_contains_string('name="page_count"', $html);
+        $this->assert_contains_string('name="title"', $html);
+        $this->assert_contains_string('978-0-123', $html);
 
         // Hidden glue columns should not render
-        $this->assertStringNotContainsString('name="type"', $html);
-        $this->assertStringNotContainsString('name="type_path"', $html);
-        $this->assertStringNotContainsString('name="thing_id"', $html);
+        $this->assert_not_contains_string('name="type"', $html);
+        $this->assert_not_contains_string('name="type_path"', $html);
+        $this->assert_not_contains_string('name="thing_id"', $html);
     }
 
     public function test_formhtml_wildcard_renders_type_select(): void
@@ -1046,10 +1079,10 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(false)
             ->fields();
 
-        $this->assertStringContainsString('<select', $html);
-        $this->assertStringContainsString('name="type"', $html);
-        $this->assertStringContainsString('Book', $html);
-        $this->assertStringContainsString('Movie', $html);
+        $this->assert_contains_string('<select', $html);
+        $this->assert_contains_string('name="type"', $html);
+        $this->assert_contains_string('Book', $html);
+        $this->assert_contains_string('Movie', $html);
     }
 
     public function test_formhtml_wildcard_renders_data_delegate_type_attrs(): void
@@ -1061,8 +1094,8 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(false)
             ->fields();
 
-        $this->assertStringContainsString('data-delegate-type="Book"', $html);
-        $this->assertStringContainsString('data-delegate-type="Movie"', $html);
+        $this->assert_contains_string('data-delegate-type="Book"', $html);
+        $this->assert_contains_string('data-delegate-type="Movie"', $html);
     }
 
     // =========================================================================
@@ -1097,7 +1130,7 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(true)
             ->field('commentable_id');
 
-        $this->assertStringContainsString('data-depends-on="commentable_type"', $html);
+        $this->assert_contains_string('data-depends-on="commentable_type"', $html);
     }
 
     public function test_formhtml_polymorphic_sets_data_polymorphic_targets(): void
@@ -1128,11 +1161,11 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(true)
             ->field('commentable_id');
 
-        $this->assertStringContainsString('data-polymorphic="true"', $html);
-        $this->assertStringContainsString('data-polymorphic-targets=', $html);
+        $this->assert_contains_string('data-polymorphic="true"', $html);
+        $this->assert_contains_string('data-polymorphic-targets=', $html);
         // The targets JSON should contain Post and Video
-        $this->assertStringContainsString('Post', $html);
-        $this->assertStringContainsString('Video', $html);
+        $this->assert_contains_string('Post', $html);
+        $this->assert_contains_string('Video', $html);
     }
 
     // =========================================================================
@@ -1157,9 +1190,9 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(true)
             ->field('category_id');
 
-        $this->assertStringContainsString('name="category_id"', $html);
+        $this->assert_contains_string('name="category_id"', $html);
         // Should render as number input (inferred from INTEGER), not select
-        $this->assertStringNotContainsString('<select', $html);
+        $this->assert_not_contains_string('<select', $html);
     }
 
     public function test_relation_resolution_works_with_relational_column_meta(): void
@@ -1181,9 +1214,9 @@ class DelegationTest extends TestCase
             ->auto_resolve_relations(true)
             ->field('category_id');
 
-        $this->assertStringContainsString('<select', $html);
-        $this->assertStringContainsString('Electronics', $html);
-        $this->assertStringContainsString('Books', $html);
+        $this->assert_contains_string('<select', $html);
+        $this->assert_contains_string('Electronics', $html);
+        $this->assert_contains_string('Books', $html);
     }
 
     // =========================================================================
@@ -1195,7 +1228,7 @@ class DelegationTest extends TestCase
         $form = new FormMeta($this->make_things_table());
         $result = $form->delegate('Book');
 
-        $this->assertSame($form, $result);
+        $this->assert_same($form, $result);
     }
 
     public function test_wildcard_delegate_type_is_star(): void
@@ -1203,7 +1236,7 @@ class DelegationTest extends TestCase
         $form = new FormMeta($this->make_things_table());
         $form->delegate('*');
 
-        $this->assertSame('*', $form->get_delegate_type());
+        $this->assert_same('*', $form->get_delegate_type());
     }
 
     public function test_wildcard_delegate_chain_is_empty(): void
@@ -1212,7 +1245,7 @@ class DelegationTest extends TestCase
         $form->delegate('*');
 
         // Wildcard doesn't resolve a specific chain
-        $this->assertEmpty($form->get_delegate_chain());
+        $this->assert_empty($form->get_delegate_chain());
     }
 
     public function test_delegate_with_null_type_column(): void
@@ -1235,8 +1268,8 @@ class DelegationTest extends TestCase
         $visible = $this->visible_field_names($form);
 
         // Should still work, just no type/type_path columns to hide
-        $this->assertContains('isbn', $visible);
-        $this->assertContains('title', $visible);
+        $this->assert_in('isbn', $visible);
+        $this->assert_in('title', $visible);
     }
 
     public function test_delegate_field_lookup_searches_delegate_chain(): void
@@ -1246,8 +1279,8 @@ class DelegationTest extends TestCase
 
         // field() should find 'isbn' in the delegate chain
         $field = $form->field('isbn');
-        $this->assertInstanceOf(FieldMeta::class, $field);
-        $this->assertSame('isbn', $field->get_name());
+        $this->assert_instance_of(FieldMeta::class, $field);
+        $this->assert_same('isbn', $field->get_name());
     }
 
     public function test_delegate_error_message_lists_nested_types(): void
@@ -1266,10 +1299,10 @@ class DelegationTest extends TestCase
         } catch (InvalidArgumentException $e) {
             $message = $e->getMessage();
             // Should list both top-level and nested delegate names
-            $this->assertStringContainsString('Book', $message);
-            $this->assertStringContainsString('Movie', $message);
-            $this->assertStringContainsString('ComicsBook', $message);
-            $this->assertStringContainsString('AudioBook', $message);
+            $this->assert_contains_string('Book', $message);
+            $this->assert_contains_string('Movie', $message);
+            $this->assert_contains_string('ComicsBook', $message);
+            $this->assert_contains_string('AudioBook', $message);
         }
     }
 
@@ -1287,8 +1320,8 @@ class DelegationTest extends TestCase
         $all = $this->all_field_names($form);
 
         // Should include columns from nested delegates too
-        $this->assertContains('illustrator', $all);
-        $this->assertContains('narrator', $all);
+        $this->assert_in('illustrator', $all);
+        $this->assert_in('narrator', $all);
     }
 
     public function test_wildcard_nested_delegate_columns_have_correct_type_attr(): void
@@ -1304,15 +1337,15 @@ class DelegationTest extends TestCase
 
         // Book's direct columns should be tagged as 'Book'
         $isbn_attrs = $form->field('isbn')->get_attributes();
-        $this->assertSame('Book', $isbn_attrs['data-delegate-type']);
+        $this->assert_same('Book', $isbn_attrs['data-delegate-type']);
 
         // ComicsBook's columns should be tagged as 'ComicsBook'
         $illustrator_attrs = $form->field('illustrator')->get_attributes();
-        $this->assertSame('ComicsBook', $illustrator_attrs['data-delegate-type']);
+        $this->assert_same('ComicsBook', $illustrator_attrs['data-delegate-type']);
 
         // Movie's columns should be tagged as 'Movie'
         $director_attrs = $form->field('director')->get_attributes();
-        $this->assertSame('Movie', $director_attrs['data-delegate-type']);
+        $this->assert_same('Movie', $director_attrs['data-delegate-type']);
     }
 
     public function test_formhtml_renders_complete_form_with_delegation(): void
@@ -1326,10 +1359,10 @@ class DelegationTest extends TestCase
             ->method('POST')
             ->render();
 
-        $this->assertStringContainsString('<form', $html);
-        $this->assertStringContainsString('</form>', $html);
-        $this->assertStringContainsString('action="/things/store"', $html);
-        $this->assertStringContainsString('name="isbn"', $html);
+        $this->assert_contains_string('<form', $html);
+        $this->assert_contains_string('</form>', $html);
+        $this->assert_contains_string('action="/things/store"', $html);
+        $this->assert_contains_string('name="isbn"', $html);
     }
 
     public function test_wildcard_type_select_includes_nested_delegate_names(): void
@@ -1345,10 +1378,10 @@ class DelegationTest extends TestCase
 
         $options = $form->field('type')->get_options();
 
-        $this->assertArrayHasKey('Book', $options);
-        $this->assertArrayHasKey('Movie', $options);
-        $this->assertArrayHasKey('ComicsBook', $options);
-        $this->assertArrayHasKey('AudioBook', $options);
+        $this->assert_has_key('Book', $options);
+        $this->assert_has_key('Movie', $options);
+        $this->assert_has_key('ComicsBook', $options);
+        $this->assert_has_key('AudioBook', $options);
     }
 
     public function test_delegate_visible_count_matches_expected(): void
@@ -1361,9 +1394,11 @@ class DelegationTest extends TestCase
         // Root visible: title (id overwritten by delegate hidden id)
         // Movie visible: duration, director
         // Hidden: id (delegate PK), type, type_path, thing_id (FK)
-        $this->assertContains('title', $visible);
-        $this->assertContains('duration', $visible);
-        $this->assertContains('director', $visible);
-        $this->assertCount(3, $visible);
+        $this->assert_in('title', $visible);
+        $this->assert_in('duration', $visible);
+        $this->assert_in('director', $visible);
+        $this->assert_count(3, $visible);
     }
 }
+
+exit(DelegationTest::run_all('Italix Forms — delegated types'));

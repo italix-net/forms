@@ -1,13 +1,46 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+/**
+ * Italix Forms — form sections
+ *
+ * Written as an xUnit class; runs on the shared runner (`Italix\Testing\Runner`) through XunitCase.
+ *
+ * Run: php src/Libs/Italix/Forms/tests/FormSectionTest.php
+ */
 
 declare(strict_types=1);
 
 namespace Italix\Forms\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Italix\Forms\FormSection;
 
-class FormSectionTest extends TestCase
+
+(static function (): void {
+    foreach ([
+        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ] as $autoload) {
+        if (is_file($autoload)) {
+            require_once $autoload;
+
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not find an autoloader. Run composer install.
+");
+    exit(2);
+})();
+
+require_once __DIR__ . '/XunitCase.php';
+
+class FormSectionTest extends XunitCase
 {
     // =========================================================================
     // Constructor & Name
@@ -17,7 +50,7 @@ class FormSectionTest extends TestCase
     {
         $section = new FormSection('personal_info');
 
-        $this->assertSame('personal_info', $section->get_name());
+        $this->assert_same('personal_info', $section->get_name());
     }
 
     // =========================================================================
@@ -29,29 +62,29 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->title('Personal Information');
 
-        $this->assertSame($section, $result, 'title() should return self for fluency');
-        $this->assertSame('Personal Information', $section->get_title());
+        $this->assert_same($section, $result, 'title() should return self for fluency');
+        $this->assert_same('Personal Information', $section->get_title());
     }
 
     public function test_title_auto_generated_from_snake_case_name(): void
     {
         $section = new FormSection('personal_info');
 
-        $this->assertSame('Personal Info', $section->get_title());
+        $this->assert_same('Personal Info', $section->get_title());
     }
 
     public function test_title_auto_generated_single_word(): void
     {
         $section = new FormSection('settings');
 
-        $this->assertSame('Settings', $section->get_title());
+        $this->assert_same('Settings', $section->get_title());
     }
 
     public function test_title_auto_generated_multi_word(): void
     {
         $section = new FormSection('account_security_settings');
 
-        $this->assertSame('Account Security Settings', $section->get_title());
+        $this->assert_same('Account Security Settings', $section->get_title());
     }
 
     // =========================================================================
@@ -63,15 +96,15 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->description('Enter your details');
 
-        $this->assertSame($section, $result);
-        $this->assertSame('Enter your details', $section->get_description());
+        $this->assert_same($section, $result);
+        $this->assert_same('Enter your details', $section->get_description());
     }
 
     public function test_description_default_is_null(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertNull($section->get_description());
+        $this->assert_null($section->get_description());
     }
 
     // =========================================================================
@@ -83,15 +116,15 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->icon('fa-user');
 
-        $this->assertSame($section, $result);
-        $this->assertSame('fa-user', $section->get_icon());
+        $this->assert_same($section, $result);
+        $this->assert_same('fa-user', $section->get_icon());
     }
 
     public function test_icon_default_is_null(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertNull($section->get_icon());
+        $this->assert_null($section->get_icon());
     }
 
     // =========================================================================
@@ -103,15 +136,15 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->order(5);
 
-        $this->assertSame($section, $result);
-        $this->assertSame(5, $section->get_order());
+        $this->assert_same($section, $result);
+        $this->assert_same(5, $section->get_order());
     }
 
     public function test_order_default_is_zero(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertSame(0, $section->get_order());
+        $this->assert_same(0, $section->get_order());
     }
 
     // =========================================================================
@@ -123,15 +156,15 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->columns(3);
 
-        $this->assertSame($section, $result);
-        $this->assertSame(3, $section->get_columns());
+        $this->assert_same($section, $result);
+        $this->assert_same(3, $section->get_columns());
     }
 
     public function test_columns_default_is_one(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertSame(1, $section->get_columns());
+        $this->assert_same(1, $section->get_columns());
     }
 
     // =========================================================================
@@ -143,15 +176,15 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->class('card mb-4');
 
-        $this->assertSame($section, $result);
-        $this->assertSame('card mb-4', $section->get_class());
+        $this->assert_same($section, $result);
+        $this->assert_same('card mb-4', $section->get_class());
     }
 
     public function test_class_default_is_null(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertNull($section->get_class());
+        $this->assert_null($section->get_class());
     }
 
     // =========================================================================
@@ -163,9 +196,9 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->collapsible();
 
-        $this->assertSame($section, $result);
-        $this->assertTrue($section->is_collapsible());
-        $this->assertFalse($section->is_collapsed());
+        $this->assert_same($section, $result);
+        $this->assert_true($section->is_collapsible());
+        $this->assert_false($section->is_collapsed());
     }
 
     public function test_collapsible_with_collapsed_true(): void
@@ -173,8 +206,8 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $section->collapsible(true);
 
-        $this->assertTrue($section->is_collapsible());
-        $this->assertTrue($section->is_collapsed());
+        $this->assert_true($section->is_collapsible());
+        $this->assert_true($section->is_collapsed());
     }
 
     public function test_collapsible_with_collapsed_false(): void
@@ -182,8 +215,8 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $section->collapsible(false);
 
-        $this->assertTrue($section->is_collapsible());
-        $this->assertFalse($section->is_collapsed());
+        $this->assert_true($section->is_collapsible());
+        $this->assert_false($section->is_collapsed());
     }
 
     public function test_collapsed_method(): void
@@ -191,9 +224,9 @@ class FormSectionTest extends TestCase
         $section = new FormSection('personal');
         $result = $section->collapsed();
 
-        $this->assertSame($section, $result);
-        $this->assertTrue($section->is_collapsible());
-        $this->assertTrue($section->is_collapsed());
+        $this->assert_same($section, $result);
+        $this->assert_true($section->is_collapsible());
+        $this->assert_true($section->is_collapsed());
     }
 
     public function test_expanded_method(): void
@@ -202,22 +235,22 @@ class FormSectionTest extends TestCase
         $section->collapsed();
         $result = $section->expanded();
 
-        $this->assertSame($section, $result);
-        $this->assertFalse($section->is_collapsed());
+        $this->assert_same($section, $result);
+        $this->assert_false($section->is_collapsed());
     }
 
     public function test_collapsible_default_is_false(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertFalse($section->is_collapsible());
+        $this->assert_false($section->is_collapsible());
     }
 
     public function test_collapsed_default_is_false(): void
     {
         $section = new FormSection('personal');
 
-        $this->assertFalse($section->is_collapsed());
+        $this->assert_false($section->is_collapsed());
     }
 
     public function test_collapsed_then_expanded_preserves_collapsible(): void
@@ -227,8 +260,8 @@ class FormSectionTest extends TestCase
         $section->expanded();
 
         // collapsible was set by collapsed(), expanded() only changes collapsed state
-        $this->assertTrue($section->is_collapsible());
-        $this->assertFalse($section->is_collapsed());
+        $this->assert_true($section->is_collapsible());
+        $this->assert_false($section->is_collapsed());
     }
 
     // =========================================================================
@@ -241,7 +274,7 @@ class FormSectionTest extends TestCase
 
         $arr = $section->to_array();
 
-        $this->assertSame([
+        $this->assert_same([
             'name' => 'personal',
             'title' => 'Personal',
             'description' => null,
@@ -268,7 +301,7 @@ class FormSectionTest extends TestCase
 
         $arr = $section->to_array();
 
-        $this->assertSame([
+        $this->assert_same([
             'name' => 'account_settings',
             'title' => 'Account Settings',
             'description' => 'Manage your account',
@@ -287,7 +320,7 @@ class FormSectionTest extends TestCase
 
         $arr = $section->to_array();
 
-        $this->assertSame('Shipping Address', $arr['title']);
+        $this->assert_same('Shipping Address', $arr['title']);
     }
 
     // =========================================================================
@@ -307,13 +340,15 @@ class FormSectionTest extends TestCase
             ->class('cls')
             ->collapsible();
 
-        $this->assertSame($section, $result);
-        $this->assertSame('Test', $section->get_title());
-        $this->assertSame('Desc', $section->get_description());
-        $this->assertSame('icon', $section->get_icon());
-        $this->assertSame(1, $section->get_order());
-        $this->assertSame(2, $section->get_columns());
-        $this->assertSame('cls', $section->get_class());
-        $this->assertTrue($section->is_collapsible());
+        $this->assert_same($section, $result);
+        $this->assert_same('Test', $section->get_title());
+        $this->assert_same('Desc', $section->get_description());
+        $this->assert_same('icon', $section->get_icon());
+        $this->assert_same(1, $section->get_order());
+        $this->assert_same(2, $section->get_columns());
+        $this->assert_same('cls', $section->get_class());
+        $this->assert_true($section->is_collapsible());
     }
 }
+
+exit(FormSectionTest::run_all('Italix Forms — form sections'));

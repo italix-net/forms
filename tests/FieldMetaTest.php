@@ -1,16 +1,49 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+/**
+ * Italix Forms — field metadata
+ *
+ * Written as an xUnit class; runs on the shared runner (`Italix\Testing\Runner`) through XunitCase.
+ *
+ * Run: php src/Libs/Italix/Forms/tests/FieldMetaTest.php
+ */
 
 declare(strict_types=1);
 
 namespace Italix\Forms\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Italix\Forms\FieldMeta;
 use Italix\Rules\Rule;
 use Italix\Forms\Adapters\GenericColumnAdapter;
 use InvalidArgumentException;
 
-class FieldMetaTest extends TestCase
+
+(static function (): void {
+    foreach ([
+        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ] as $autoload) {
+        if (is_file($autoload)) {
+            require_once $autoload;
+
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not find an autoloader. Run composer install.
+");
+    exit(2);
+})();
+
+require_once __DIR__ . '/XunitCase.php';
+
+class FieldMetaTest extends XunitCase
 {
     /**
      * Helper to create a FieldMeta with a GenericColumnAdapter.
@@ -42,14 +75,14 @@ class FieldMetaTest extends TestCase
         $column = new GenericColumnAdapter('name', 'VARCHAR', false, false, 100);
         $field = new FieldMeta($column);
 
-        $this->assertSame($column, $field->column());
+        $this->assert_same($column, $field->column());
     }
 
     public function test_get_name_returns_column_name(): void
     {
         $field = $this->make_field('username');
 
-        $this->assertSame('username', $field->get_name());
+        $this->assert_same('username', $field->get_name());
     }
 
     // =========================================================================
@@ -61,22 +94,22 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->label('Email Address');
 
-        $this->assertSame($field, $result, 'label() should return self for fluency');
-        $this->assertSame('Email Address', $field->get_label());
+        $this->assert_same($field, $result, 'label() should return self for fluency');
+        $this->assert_same('Email Address', $field->get_label());
     }
 
     public function test_label_auto_generated_from_name(): void
     {
         $field = $this->make_field('first_name');
 
-        $this->assertSame('First Name', $field->get_label());
+        $this->assert_same('First Name', $field->get_label());
     }
 
     public function test_label_auto_generated_single_word(): void
     {
         $field = $this->make_field('email');
 
-        $this->assertSame('Email', $field->get_label());
+        $this->assert_same('Email', $field->get_label());
     }
 
     public function test_placeholder_setter_and_getter(): void
@@ -84,15 +117,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->placeholder('you@example.com');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('you@example.com', $field->get_placeholder());
+        $this->assert_same($field, $result);
+        $this->assert_same('you@example.com', $field->get_placeholder());
     }
 
     public function test_placeholder_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_placeholder());
+        $this->assert_null($field->get_placeholder());
     }
 
     public function test_help_setter_and_getter(): void
@@ -100,15 +133,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->help('We will never share your email');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('We will never share your email', $field->get_help());
+        $this->assert_same($field, $result);
+        $this->assert_same('We will never share your email', $field->get_help());
     }
 
     public function test_help_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_help());
+        $this->assert_null($field->get_help());
     }
 
     // =========================================================================
@@ -120,8 +153,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->type('password');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('password', $field->get_type());
+        $this->assert_same($field, $result);
+        $this->assert_same('password', $field->get_type());
     }
 
     public function test_options_setter_and_getter(): void
@@ -130,15 +163,15 @@ class FieldMetaTest extends TestCase
         $opts = ['m' => 'Male', 'f' => 'Female'];
         $result = $field->options($opts);
 
-        $this->assertSame($field, $result);
-        $this->assertSame($opts, $field->get_options());
+        $this->assert_same($field, $result);
+        $this->assert_same($opts, $field->get_options());
     }
 
     public function test_options_default_is_empty_array(): void
     {
         $field = $this->make_field();
 
-        $this->assertSame([], $field->get_options());
+        $this->assert_same([], $field->get_options());
     }
 
     public function test_type_inferred_as_select_when_options_set(): void
@@ -146,7 +179,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $field->options(['a' => 'A', 'b' => 'B']);
 
-        $this->assertSame('select', $field->get_type());
+        $this->assert_same('select', $field->get_type());
     }
 
     public function test_attr_single(): void
@@ -154,8 +187,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->attr('maxlength', 100);
 
-        $this->assertSame($field, $result);
-        $this->assertSame(['maxlength' => 100], $field->get_attributes());
+        $this->assert_same($field, $result);
+        $this->assert_same(['maxlength' => 100], $field->get_attributes());
     }
 
     public function test_attrs_multiple(): void
@@ -163,8 +196,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->attrs(['data-id' => '5', 'rows' => 3]);
 
-        $this->assertSame($field, $result);
-        $this->assertSame(['data-id' => '5', 'rows' => 3], $field->get_attributes());
+        $this->assert_same($field, $result);
+        $this->assert_same(['data-id' => '5', 'rows' => 3], $field->get_attributes());
     }
 
     public function test_attrs_merges_with_existing(): void
@@ -173,14 +206,14 @@ class FieldMetaTest extends TestCase
         $field->attr('foo', 'bar');
         $field->attrs(['baz' => 'qux']);
 
-        $this->assertSame(['foo' => 'bar', 'baz' => 'qux'], $field->get_attributes());
+        $this->assert_same(['foo' => 'bar', 'baz' => 'qux'], $field->get_attributes());
     }
 
     public function test_attributes_default_is_empty_array(): void
     {
         $field = $this->make_field();
 
-        $this->assertSame([], $field->get_attributes());
+        $this->assert_same([], $field->get_attributes());
     }
 
     // =========================================================================
@@ -192,8 +225,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->hidden();
 
-        $this->assertSame($field, $result);
-        $this->assertTrue($field->is_hidden());
+        $this->assert_same($field, $result);
+        $this->assert_true($field->is_hidden());
     }
 
     public function test_hidden_false(): void
@@ -202,14 +235,14 @@ class FieldMetaTest extends TestCase
         $field->hidden(true);
         $field->hidden(false);
 
-        $this->assertFalse($field->is_hidden());
+        $this->assert_false($field->is_hidden());
     }
 
     public function test_hidden_default_is_false(): void
     {
         $field = $this->make_field();
 
-        $this->assertFalse($field->is_hidden());
+        $this->assert_false($field->is_hidden());
     }
 
     public function test_readonly_setter_and_getter(): void
@@ -217,15 +250,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->readonly();
 
-        $this->assertSame($field, $result);
-        $this->assertTrue($field->is_readonly());
+        $this->assert_same($field, $result);
+        $this->assert_true($field->is_readonly());
     }
 
     public function test_readonly_default_is_false(): void
     {
         $field = $this->make_field();
 
-        $this->assertFalse($field->is_readonly());
+        $this->assert_false($field->is_readonly());
     }
 
     public function test_disabled_setter_and_getter(): void
@@ -233,15 +266,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->disabled();
 
-        $this->assertSame($field, $result);
-        $this->assertTrue($field->is_disabled());
+        $this->assert_same($field, $result);
+        $this->assert_true($field->is_disabled());
     }
 
     public function test_disabled_default_is_false(): void
     {
         $field = $this->make_field();
 
-        $this->assertFalse($field->is_disabled());
+        $this->assert_false($field->is_disabled());
     }
 
     public function test_sensitive_setter_and_getter(): void
@@ -249,15 +282,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->sensitive();
 
-        $this->assertSame($field, $result);
-        $this->assertTrue($field->is_sensitive());
+        $this->assert_same($field, $result);
+        $this->assert_true($field->is_sensitive());
     }
 
     public function test_sensitive_default_is_false(): void
     {
         $field = $this->make_field();
 
-        $this->assertFalse($field->is_sensitive());
+        $this->assert_false($field->is_sensitive());
     }
 
     // =========================================================================
@@ -269,15 +302,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->order(5);
 
-        $this->assertSame($field, $result);
-        $this->assertSame(5, $field->get_order());
+        $this->assert_same($field, $result);
+        $this->assert_same(5, $field->get_order());
     }
 
     public function test_order_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_order());
+        $this->assert_null($field->get_order());
     }
 
     public function test_group_setter_and_getter(): void
@@ -285,15 +318,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->group('personal');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('personal', $field->get_group());
+        $this->assert_same($field, $result);
+        $this->assert_same('personal', $field->get_group());
     }
 
     public function test_group_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_group());
+        $this->assert_null($field->get_group());
     }
 
     public function test_colspan_setter_and_getter(): void
@@ -301,15 +334,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->colspan(2);
 
-        $this->assertSame($field, $result);
-        $this->assertSame(2, $field->get_colspan());
+        $this->assert_same($field, $result);
+        $this->assert_same(2, $field->get_colspan());
     }
 
     public function test_colspan_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_colspan());
+        $this->assert_null($field->get_colspan());
     }
 
     public function test_width_setter_and_getter(): void
@@ -317,15 +350,15 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->width('50%');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('50%', $field->get_width());
+        $this->assert_same($field, $result);
+        $this->assert_same('50%', $field->get_width());
     }
 
     public function test_width_default_is_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_width());
+        $this->assert_null($field->get_width());
     }
 
     // =========================================================================
@@ -337,8 +370,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->wrapper_class('form-group');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('form-group', $field->get_wrapper_class());
+        $this->assert_same($field, $result);
+        $this->assert_same('form-group', $field->get_wrapper_class());
     }
 
     public function test_input_class_setter_and_getter(): void
@@ -346,8 +379,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->input_class('form-control');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('form-control', $field->get_input_class());
+        $this->assert_same($field, $result);
+        $this->assert_same('form-control', $field->get_input_class());
     }
 
     public function test_label_class_setter_and_getter(): void
@@ -355,8 +388,8 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->label_class('form-label');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('form-label', $field->get_label_class());
+        $this->assert_same($field, $result);
+        $this->assert_same('form-label', $field->get_label_class());
     }
 
     public function test_help_class_setter_and_getter(): void
@@ -364,18 +397,18 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->help_class('form-text');
 
-        $this->assertSame($field, $result);
-        $this->assertSame('form-text', $field->get_help_class());
+        $this->assert_same($field, $result);
+        $this->assert_same('form-text', $field->get_help_class());
     }
 
     public function test_css_class_defaults_are_null(): void
     {
         $field = $this->make_field();
 
-        $this->assertNull($field->get_wrapper_class());
-        $this->assertNull($field->get_input_class());
-        $this->assertNull($field->get_label_class());
-        $this->assertNull($field->get_help_class());
+        $this->assert_null($field->get_wrapper_class());
+        $this->assert_null($field->get_input_class());
+        $this->assert_null($field->get_label_class());
+        $this->assert_null($field->get_help_class());
     }
 
     // =========================================================================
@@ -387,19 +420,19 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field();
         $result = $field->rules(Rule::required(), Rule::email());
 
-        $this->assertSame($field, $result);
+        $this->assert_same($field, $result);
 
         $rules = $field->get_rules();
-        $this->assertCount(2, $rules);
-        $this->assertSame('required', $rules[0]->get_name());
-        $this->assertSame('email', $rules[1]->get_name());
+        $this->assert_count(2, $rules);
+        $this->assert_same('required', $rules[0]->get_name());
+        $this->assert_same('email', $rules[1]->get_name());
     }
 
     public function test_rules_default_is_empty(): void
     {
         $field = $this->make_field();
 
-        $this->assertSame([], $field->get_rules());
+        $this->assert_same([], $field->get_rules());
     }
 
     // =========================================================================
@@ -410,8 +443,8 @@ class FieldMetaTest extends TestCase
     {
         $field = $this->make_field();
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches('/italix\/rules/');
+        $this->expect_exception(InvalidArgumentException::class);
+        $this->expect_exception_message_matches('/italix\/rules/');
 
         $field->rules('required');
     }
@@ -420,7 +453,7 @@ class FieldMetaTest extends TestCase
     {
         $field = $this->make_field();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expect_exception(InvalidArgumentException::class);
 
         $field->rules(123);
     }
@@ -433,14 +466,14 @@ class FieldMetaTest extends TestCase
     {
         $field = $this->make_field('name', 'VARCHAR', false);
 
-        $this->assertTrue($field->is_required());
+        $this->assert_true($field->is_required());
     }
 
     public function test_is_required_false_for_nullable_column_without_rule(): void
     {
         $field = $this->make_field('bio', 'TEXT', true);
 
-        $this->assertFalse($field->is_required());
+        $this->assert_false($field->is_required());
     }
 
     public function test_is_required_true_for_nullable_column_with_required_rule(): void
@@ -448,7 +481,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field('bio', 'TEXT', true);
         $field->rules(Rule::required());
 
-        $this->assertTrue($field->is_required());
+        $this->assert_true($field->is_required());
     }
 
     public function test_is_required_false_for_nullable_with_non_required_rules(): void
@@ -456,7 +489,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field('bio', 'TEXT', true);
         $field->rules(Rule::email(), Rule::max_length(255));
 
-        $this->assertFalse($field->is_required());
+        $this->assert_false($field->is_required());
     }
 
     // =========================================================================
@@ -467,126 +500,126 @@ class FieldMetaTest extends TestCase
     {
         $field = $this->make_field('name', 'VARCHAR');
 
-        $this->assertSame('text', $field->get_type());
+        $this->assert_same('text', $field->get_type());
     }
 
     public function test_type_inferred_boolean_to_checkbox(): void
     {
         $field = $this->make_field('active', 'BOOLEAN');
 
-        $this->assertSame('checkbox', $field->get_type());
+        $this->assert_same('checkbox', $field->get_type());
     }
 
     public function test_type_inferred_text_to_textarea(): void
     {
         $field = $this->make_field('bio', 'TEXT');
 
-        $this->assertSame('textarea', $field->get_type());
+        $this->assert_same('textarea', $field->get_type());
     }
 
     public function test_type_inferred_integer_to_number(): void
     {
         $field = $this->make_field('age', 'INTEGER');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_bigint_to_number(): void
     {
         $field = $this->make_field('count', 'BIGINT');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_smallint_to_number(): void
     {
         $field = $this->make_field('rank', 'SMALLINT');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_serial_to_number(): void
     {
         $field = $this->make_field('id', 'SERIAL');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_decimal_to_number(): void
     {
         $field = $this->make_field('price', 'DECIMAL');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_float_to_number(): void
     {
         $field = $this->make_field('score', 'FLOAT');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_real_to_number(): void
     {
         $field = $this->make_field('score', 'REAL');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_numeric_to_number(): void
     {
         $field = $this->make_field('amount', 'NUMERIC');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_double_precision_to_number(): void
     {
         $field = $this->make_field('amount', 'DOUBLE PRECISION');
 
-        $this->assertSame('number', $field->get_type());
+        $this->assert_same('number', $field->get_type());
     }
 
     public function test_type_inferred_date_to_date(): void
     {
         $field = $this->make_field('dob', 'DATE');
 
-        $this->assertSame('date', $field->get_type());
+        $this->assert_same('date', $field->get_type());
     }
 
     public function test_type_inferred_datetime_to_datetime_local(): void
     {
         $field = $this->make_field('created', 'DATETIME');
 
-        $this->assertSame('datetime-local', $field->get_type());
+        $this->assert_same('datetime-local', $field->get_type());
     }
 
     public function test_type_inferred_timestamp_to_datetime_local(): void
     {
         $field = $this->make_field('updated', 'TIMESTAMP');
 
-        $this->assertSame('datetime-local', $field->get_type());
+        $this->assert_same('datetime-local', $field->get_type());
     }
 
     public function test_type_inferred_time_to_time(): void
     {
         $field = $this->make_field('start_time', 'TIME');
 
-        $this->assertSame('time', $field->get_type());
+        $this->assert_same('time', $field->get_type());
     }
 
     public function test_type_inferred_json_to_textarea(): void
     {
         $field = $this->make_field('meta', 'JSON');
 
-        $this->assertSame('textarea', $field->get_type());
+        $this->assert_same('textarea', $field->get_type());
     }
 
     public function test_type_inferred_jsonb_to_textarea(): void
     {
         $field = $this->make_field('data', 'JSONB');
 
-        $this->assertSame('textarea', $field->get_type());
+        $this->assert_same('textarea', $field->get_type());
     }
 
     public function test_explicit_type_overrides_inference(): void
@@ -594,7 +627,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field('name', 'VARCHAR');
         $field->type('email');
 
-        $this->assertSame('email', $field->get_type());
+        $this->assert_same('email', $field->get_type());
     }
 
     public function test_options_override_type_inference(): void
@@ -602,7 +635,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field('status', 'VARCHAR');
         $field->options(['active' => 'Active', 'inactive' => 'Inactive']);
 
-        $this->assertSame('select', $field->get_type());
+        $this->assert_same('select', $field->get_type());
     }
 
     public function test_explicit_type_overrides_options_inference(): void
@@ -610,7 +643,7 @@ class FieldMetaTest extends TestCase
         $field = $this->make_field('status', 'VARCHAR');
         $field->options(['a' => 'A'])->type('radio');
 
-        $this->assertSame('radio', $field->get_type());
+        $this->assert_same('radio', $field->get_type());
     }
 
     // =========================================================================
@@ -635,29 +668,29 @@ class FieldMetaTest extends TestCase
 
         $arr = $field->to_array();
 
-        $this->assertSame('email', $arr['name']);
-        $this->assertSame('Email Address', $arr['label']);
-        $this->assertSame('text', $arr['type']);
-        $this->assertSame('you@example.com', $arr['placeholder']);
-        $this->assertSame('Your primary email', $arr['help']);
-        $this->assertSame([], $arr['options']);
-        $this->assertTrue($arr['required']);
-        $this->assertFalse($arr['hidden']);
-        $this->assertFalse($arr['readonly']);
-        $this->assertFalse($arr['disabled']);
-        $this->assertSame(1, $arr['order']);
-        $this->assertSame('contact', $arr['group']);
-        $this->assertSame(2, $arr['colspan']);
-        $this->assertSame('50%', $arr['width']);
-        $this->assertSame([], $arr['attributes']);
-        $this->assertSame('mb-3', $arr['classes']['wrapper']);
-        $this->assertSame('form-control', $arr['classes']['input']);
-        $this->assertSame('form-label', $arr['classes']['label']);
-        $this->assertSame('form-text', $arr['classes']['help']);
+        $this->assert_same('email', $arr['name']);
+        $this->assert_same('Email Address', $arr['label']);
+        $this->assert_same('text', $arr['type']);
+        $this->assert_same('you@example.com', $arr['placeholder']);
+        $this->assert_same('Your primary email', $arr['help']);
+        $this->assert_same([], $arr['options']);
+        $this->assert_true($arr['required']);
+        $this->assert_false($arr['hidden']);
+        $this->assert_false($arr['readonly']);
+        $this->assert_false($arr['disabled']);
+        $this->assert_same(1, $arr['order']);
+        $this->assert_same('contact', $arr['group']);
+        $this->assert_same(2, $arr['colspan']);
+        $this->assert_same('50%', $arr['width']);
+        $this->assert_same([], $arr['attributes']);
+        $this->assert_same('mb-3', $arr['classes']['wrapper']);
+        $this->assert_same('form-control', $arr['classes']['input']);
+        $this->assert_same('form-label', $arr['classes']['label']);
+        $this->assert_same('form-text', $arr['classes']['help']);
 
-        $this->assertCount(2, $arr['rules']);
-        $this->assertSame('required', $arr['rules'][0]['rule']);
-        $this->assertSame('email', $arr['rules'][1]['rule']);
+        $this->assert_count(2, $arr['rules']);
+        $this->assert_same('required', $arr['rules'][0]['rule']);
+        $this->assert_same('email', $arr['rules'][1]['rule']);
     }
 
     public function test_to_array_minimal_field(): void
@@ -666,26 +699,26 @@ class FieldMetaTest extends TestCase
 
         $arr = $field->to_array();
 
-        $this->assertSame('name', $arr['name']);
-        $this->assertSame('Name', $arr['label']);
-        $this->assertSame('text', $arr['type']);
-        $this->assertNull($arr['placeholder']);
-        $this->assertNull($arr['help']);
-        $this->assertSame([], $arr['options']);
-        $this->assertSame([], $arr['rules']);
-        $this->assertFalse($arr['required']);
-        $this->assertFalse($arr['hidden']);
-        $this->assertFalse($arr['readonly']);
-        $this->assertFalse($arr['disabled']);
-        $this->assertNull($arr['order']);
-        $this->assertNull($arr['group']);
-        $this->assertNull($arr['colspan']);
-        $this->assertNull($arr['width']);
-        $this->assertSame([], $arr['attributes']);
-        $this->assertNull($arr['classes']['wrapper']);
-        $this->assertNull($arr['classes']['input']);
-        $this->assertNull($arr['classes']['label']);
-        $this->assertNull($arr['classes']['help']);
+        $this->assert_same('name', $arr['name']);
+        $this->assert_same('Name', $arr['label']);
+        $this->assert_same('text', $arr['type']);
+        $this->assert_null($arr['placeholder']);
+        $this->assert_null($arr['help']);
+        $this->assert_same([], $arr['options']);
+        $this->assert_same([], $arr['rules']);
+        $this->assert_false($arr['required']);
+        $this->assert_false($arr['hidden']);
+        $this->assert_false($arr['readonly']);
+        $this->assert_false($arr['disabled']);
+        $this->assert_null($arr['order']);
+        $this->assert_null($arr['group']);
+        $this->assert_null($arr['colspan']);
+        $this->assert_null($arr['width']);
+        $this->assert_same([], $arr['attributes']);
+        $this->assert_null($arr['classes']['wrapper']);
+        $this->assert_null($arr['classes']['input']);
+        $this->assert_null($arr['classes']['label']);
+        $this->assert_null($arr['classes']['help']);
     }
 
     // =========================================================================
@@ -705,26 +738,26 @@ class FieldMetaTest extends TestCase
         $arr = $field->to_array();
 
         // Redacted output should have limited keys
-        $this->assertSame('password', $arr['name']);
-        $this->assertSame('Password', $arr['label']);
-        $this->assertSame('text', $arr['type']);
-        $this->assertTrue($arr['sensitive']);
-        $this->assertTrue($arr['required']);
-        $this->assertFalse($arr['hidden']);
-        $this->assertSame(5, $arr['order']);
-        $this->assertSame('security', $arr['group']);
+        $this->assert_same('password', $arr['name']);
+        $this->assert_same('Password', $arr['label']);
+        $this->assert_same('text', $arr['type']);
+        $this->assert_true($arr['sensitive']);
+        $this->assert_true($arr['required']);
+        $this->assert_false($arr['hidden']);
+        $this->assert_same(5, $arr['order']);
+        $this->assert_same('security', $arr['group']);
 
         // Should NOT include detailed info
-        $this->assertArrayNotHasKey('placeholder', $arr);
-        $this->assertArrayNotHasKey('help', $arr);
-        $this->assertArrayNotHasKey('rules', $arr);
-        $this->assertArrayNotHasKey('readonly', $arr);
-        $this->assertArrayNotHasKey('disabled', $arr);
-        $this->assertArrayNotHasKey('colspan', $arr);
-        $this->assertArrayNotHasKey('width', $arr);
-        $this->assertArrayNotHasKey('attributes', $arr);
-        $this->assertArrayNotHasKey('classes', $arr);
-        $this->assertArrayNotHasKey('options', $arr);
+        $this->assert_not_has_key('placeholder', $arr);
+        $this->assert_not_has_key('help', $arr);
+        $this->assert_not_has_key('rules', $arr);
+        $this->assert_not_has_key('readonly', $arr);
+        $this->assert_not_has_key('disabled', $arr);
+        $this->assert_not_has_key('colspan', $arr);
+        $this->assert_not_has_key('width', $arr);
+        $this->assert_not_has_key('attributes', $arr);
+        $this->assert_not_has_key('classes', $arr);
+        $this->assert_not_has_key('options', $arr);
     }
 
     public function test_to_array_sensitive_field_included_when_requested(): void
@@ -738,15 +771,15 @@ class FieldMetaTest extends TestCase
         $arr = $field->to_array(true);
 
         // Should include all details when include_sensitive = true
-        $this->assertSame('api_key', $arr['name']);
-        $this->assertSame('API Key', $arr['label']);
-        $this->assertSame('sk-...', $arr['placeholder']);
-        $this->assertArrayHasKey('rules', $arr);
-        $this->assertArrayHasKey('classes', $arr);
-        $this->assertArrayHasKey('attributes', $arr);
+        $this->assert_same('api_key', $arr['name']);
+        $this->assert_same('API Key', $arr['label']);
+        $this->assert_same('sk-...', $arr['placeholder']);
+        $this->assert_has_key('rules', $arr);
+        $this->assert_has_key('classes', $arr);
+        $this->assert_has_key('attributes', $arr);
 
         // should NOT have the 'sensitive' key in full export
-        $this->assertArrayNotHasKey('sensitive', $arr);
+        $this->assert_not_has_key('sensitive', $arr);
     }
 
     public function test_to_array_non_sensitive_field_always_full(): void
@@ -756,9 +789,11 @@ class FieldMetaTest extends TestCase
 
         $arr = $field->to_array();
 
-        $this->assertArrayHasKey('placeholder', $arr);
-        $this->assertArrayHasKey('rules', $arr);
-        $this->assertArrayHasKey('classes', $arr);
-        $this->assertArrayNotHasKey('sensitive', $arr);
+        $this->assert_has_key('placeholder', $arr);
+        $this->assert_has_key('rules', $arr);
+        $this->assert_has_key('classes', $arr);
+        $this->assert_not_has_key('sensitive', $arr);
     }
 }
+
+exit(FieldMetaTest::run_all('Italix Forms — field metadata'));

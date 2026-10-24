@@ -1,10 +1,21 @@
 <?php
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+/**
+ * Italix Forms — widgets
+ *
+ * Written as an xUnit class; runs on the shared runner (`Italix\Testing\Runner`) through XunitCase.
+ *
+ * Run: php src/Libs/Italix/Forms/tests/WidgetTest.php
+ */
 
 declare(strict_types=1);
 
 namespace Italix\Forms\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Italix\Forms\Adapters\GenericColumnAdapter;
 use Italix\Forms\FieldMeta;
 use Italix\Forms\Rendering\Widgets\TextWidget;
@@ -19,7 +30,29 @@ use Italix\Forms\Rendering\Widgets\FileWidget;
 use Italix\Forms\Rendering\Widgets\HiddenWidget;
 use Italix\Forms\Rendering\Widgets\ReadonlyWidget;
 
-class WidgetTest extends TestCase
+
+(static function (): void {
+    foreach ([
+        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ] as $autoload) {
+        if (is_file($autoload)) {
+            require_once $autoload;
+
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not find an autoloader. Run composer install.
+");
+    exit(2);
+})();
+
+require_once __DIR__ . '/XunitCase.php';
+
+class WidgetTest extends XunitCase
 {
     /**
      * Create a FieldMeta with given column properties.
@@ -52,8 +85,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'john');
 
-        $this->assertStringContainsString('<input', $html);
-        $this->assertStringContainsString('type="text"', $html);
+        $this->assert_contains_string('<input', $html);
+        $this->assert_contains_string('type="text"', $html);
     }
 
     public function test_text_widget_renders_name_attribute(): void
@@ -64,7 +97,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('name="username"', $html);
+        $this->assert_contains_string('name="username"', $html);
     }
 
     public function test_text_widget_renders_value(): void
@@ -75,7 +108,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'Alice');
 
-        $this->assertStringContainsString('value="Alice"', $html);
+        $this->assert_contains_string('value="Alice"', $html);
     }
 
     public function test_text_widget_renders_maxlength_from_column_length(): void
@@ -86,7 +119,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('maxlength="100"', $html);
+        $this->assert_contains_string('maxlength="100"', $html);
     }
 
     public function test_text_widget_no_maxlength_without_column_length(): void
@@ -97,7 +130,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringNotContainsString('maxlength', $html);
+        $this->assert_not_contains_string('maxlength', $html);
     }
 
     public function test_text_widget_renders_email_type(): void
@@ -108,7 +141,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('type="email"', $html);
+        $this->assert_contains_string('type="email"', $html);
     }
 
     public function test_text_widget_renders_url_type(): void
@@ -119,7 +152,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'https://example.com');
 
-        $this->assertStringContainsString('type="url"', $html);
+        $this->assert_contains_string('type="url"', $html);
     }
 
     public function test_text_widget_renders_placeholder(): void
@@ -130,7 +163,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('placeholder="Enter name"', $html);
+        $this->assert_contains_string('placeholder="Enter name"', $html);
     }
 
     public function test_text_widget_renders_required(): void
@@ -141,7 +174,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('required', $html);
+        $this->assert_contains_string('required', $html);
     }
 
     public function test_text_widget_renders_id(): void
@@ -152,7 +185,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('id="field-username"', $html);
+        $this->assert_contains_string('id="field-username"', $html);
     }
 
     public function test_text_widget_escapes_value(): void
@@ -163,8 +196,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '"<script>');
 
-        $this->assertStringNotContainsString('<script>', $html);
-        $this->assertStringContainsString('&lt;script&gt;', $html);
+        $this->assert_not_contains_string('<script>', $html);
+        $this->assert_contains_string('&lt;script&gt;', $html);
     }
 
     public function test_text_widget_view_mode(): void
@@ -174,9 +207,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'Alice');
 
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringContainsString('Alice', $html);
-        $this->assertStringNotContainsString('<input', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_contains_string('Alice', $html);
+        $this->assert_not_contains_string('<input', $html);
     }
 
     public function test_text_widget_view_mode_empty_value(): void
@@ -186,7 +219,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, '');
 
-        $this->assertStringContainsString('form-view-value', $html);
+        $this->assert_contains_string('form-view-value', $html);
     }
 
     // =========================================================================
@@ -201,8 +234,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'Hello world');
 
-        $this->assertStringContainsString('<textarea', $html);
-        $this->assertStringContainsString('</textarea>', $html);
+        $this->assert_contains_string('<textarea', $html);
+        $this->assert_contains_string('</textarea>', $html);
     }
 
     public function test_textarea_widget_value_inside_tags(): void
@@ -213,7 +246,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'My bio content');
 
-        $this->assertStringContainsString('>My bio content</textarea>', $html);
+        $this->assert_contains_string('>My bio content</textarea>', $html);
     }
 
     public function test_textarea_widget_default_rows_five(): void
@@ -224,7 +257,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('rows="5"', $html);
+        $this->assert_contains_string('rows="5"', $html);
     }
 
     public function test_textarea_widget_custom_rows_via_attrs(): void
@@ -235,7 +268,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '', ['rows' => '10']);
 
-        $this->assertStringContainsString('rows="10"', $html);
+        $this->assert_contains_string('rows="10"', $html);
     }
 
     public function test_textarea_widget_renders_name(): void
@@ -246,7 +279,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('name="description"', $html);
+        $this->assert_contains_string('name="description"', $html);
     }
 
     public function test_textarea_widget_escapes_value(): void
@@ -257,7 +290,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '<b>Bold</b>');
 
-        $this->assertStringContainsString('&lt;b&gt;Bold&lt;/b&gt;', $html);
+        $this->assert_contains_string('&lt;b&gt;Bold&lt;/b&gt;', $html);
     }
 
     public function test_textarea_widget_placeholder(): void
@@ -268,7 +301,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('placeholder="Write something..."', $html);
+        $this->assert_contains_string('placeholder="Write something..."', $html);
     }
 
     public function test_textarea_widget_view_mode(): void
@@ -278,9 +311,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'Some bio text');
 
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringContainsString('Some bio text', $html);
-        $this->assertStringNotContainsString('<textarea', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_contains_string('Some bio text', $html);
+        $this->assert_not_contains_string('<textarea', $html);
     }
 
     // =========================================================================
@@ -295,8 +328,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('<select', $html);
-        $this->assertStringContainsString('</select>', $html);
+        $this->assert_contains_string('<select', $html);
+        $this->assert_contains_string('</select>', $html);
     }
 
     public function test_select_widget_renders_options(): void
@@ -307,10 +340,10 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('value="active"', $html);
-        $this->assertStringContainsString('>Active</option>', $html);
-        $this->assertStringContainsString('value="inactive"', $html);
-        $this->assertStringContainsString('>Inactive</option>', $html);
+        $this->assert_contains_string('value="active"', $html);
+        $this->assert_contains_string('>Active</option>', $html);
+        $this->assert_contains_string('value="inactive"', $html);
+        $this->assert_contains_string('>Inactive</option>', $html);
     }
 
     public function test_select_widget_selected_value(): void
@@ -321,7 +354,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'g');
 
-        $this->assertStringContainsString('value="g" selected', $html);
+        $this->assert_contains_string('value="g" selected', $html);
     }
 
     public function test_select_widget_placeholder_option(): void
@@ -332,7 +365,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('-- Select --', $html);
+        $this->assert_contains_string('-- Select --', $html);
     }
 
     public function test_select_widget_custom_placeholder(): void
@@ -345,7 +378,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('Choose a country', $html);
+        $this->assert_contains_string('Choose a country', $html);
     }
 
     public function test_select_widget_renders_name(): void
@@ -356,7 +389,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('name="role"', $html);
+        $this->assert_contains_string('name="role"', $html);
     }
 
     public function test_select_widget_view_mode_shows_label(): void
@@ -367,9 +400,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'active');
 
-        $this->assertStringContainsString('Active', $html);
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringNotContainsString('<select', $html);
+        $this->assert_contains_string('Active', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_not_contains_string('<select', $html);
     }
 
     public function test_select_widget_view_mode_unknown_value_shows_raw(): void
@@ -380,7 +413,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'unknown');
 
-        $this->assertStringContainsString('unknown', $html);
+        $this->assert_contains_string('unknown', $html);
     }
 
     // =========================================================================
@@ -395,10 +428,10 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, false);
 
-        $this->assertStringContainsString('type="hidden"', $html);
-        $this->assertStringContainsString('value="0"', $html);
-        $this->assertStringContainsString('type="checkbox"', $html);
-        $this->assertStringContainsString('value="1"', $html);
+        $this->assert_contains_string('type="hidden"', $html);
+        $this->assert_contains_string('value="0"', $html);
+        $this->assert_contains_string('type="checkbox"', $html);
+        $this->assert_contains_string('value="1"', $html);
     }
 
     public function test_checkbox_widget_single_checked_state(): void
@@ -409,7 +442,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, true);
 
-        $this->assertStringContainsString('checked', $html);
+        $this->assert_contains_string('checked', $html);
     }
 
     public function test_checkbox_widget_single_unchecked_state(): void
@@ -420,7 +453,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, false);
 
-        $this->assertStringNotContainsString(' checked', $html);
+        $this->assert_not_contains_string(' checked', $html);
     }
 
     public function test_checkbox_widget_multiple_from_options(): void
@@ -431,10 +464,10 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, ['php', 'py']);
 
-        $this->assertStringContainsString('checkbox-group', $html);
-        $this->assertStringContainsString('PHP', $html);
-        $this->assertStringContainsString('JavaScript', $html);
-        $this->assertStringContainsString('Python', $html);
+        $this->assert_contains_string('checkbox-group', $html);
+        $this->assert_contains_string('PHP', $html);
+        $this->assert_contains_string('JavaScript', $html);
+        $this->assert_contains_string('Python', $html);
     }
 
     public function test_checkbox_widget_multiple_checked_state(): void
@@ -446,7 +479,7 @@ class WidgetTest extends TestCase
         $html = $widget->render_edit($field, ['a']);
 
         // The option 'a' should have checked
-        $this->assertStringContainsString('value="a" checked', $html);
+        $this->assert_contains_string('value="a" checked', $html);
     }
 
     public function test_checkbox_widget_multiple_uses_array_name(): void
@@ -457,7 +490,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, []);
 
-        $this->assertStringContainsString('name="tags[]"', $html);
+        $this->assert_contains_string('name="tags[]"', $html);
     }
 
     public function test_checkbox_widget_view_mode_boolean_yes(): void
@@ -468,8 +501,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, true);
 
-        $this->assertStringContainsString('Yes', $html);
-        $this->assertStringContainsString('form-view-value', $html);
+        $this->assert_contains_string('Yes', $html);
+        $this->assert_contains_string('form-view-value', $html);
     }
 
     public function test_checkbox_widget_view_mode_boolean_no(): void
@@ -480,7 +513,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, false);
 
-        $this->assertStringContainsString('No', $html);
+        $this->assert_contains_string('No', $html);
     }
 
     public function test_checkbox_widget_view_mode_multiple_shows_labels(): void
@@ -491,8 +524,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, ['a', 'c']);
 
-        $this->assertStringContainsString('Alpha', $html);
-        $this->assertStringContainsString('Gamma', $html);
+        $this->assert_contains_string('Alpha', $html);
+        $this->assert_contains_string('Gamma', $html);
     }
 
     // =========================================================================
@@ -507,11 +540,11 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('radio-group', $html);
-        $this->assertStringContainsString('type="radio"', $html);
-        $this->assertStringContainsString('Low', $html);
-        $this->assertStringContainsString('Medium', $html);
-        $this->assertStringContainsString('High', $html);
+        $this->assert_contains_string('radio-group', $html);
+        $this->assert_contains_string('type="radio"', $html);
+        $this->assert_contains_string('Low', $html);
+        $this->assert_contains_string('Medium', $html);
+        $this->assert_contains_string('High', $html);
     }
 
     public function test_radio_widget_checked_state(): void
@@ -522,7 +555,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'high');
 
-        $this->assertStringContainsString('value="high" checked', $html);
+        $this->assert_contains_string('value="high" checked', $html);
     }
 
     public function test_radio_widget_renders_name(): void
@@ -533,7 +566,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('name="size"', $html);
+        $this->assert_contains_string('name="size"', $html);
     }
 
     public function test_radio_widget_renders_unique_ids(): void
@@ -544,8 +577,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('id="field-color-r"', $html);
-        $this->assertStringContainsString('id="field-color-g"', $html);
+        $this->assert_contains_string('id="field-color-r"', $html);
+        $this->assert_contains_string('id="field-color-g"', $html);
     }
 
     public function test_radio_widget_disabled(): void
@@ -556,7 +589,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('disabled', $html);
+        $this->assert_contains_string('disabled', $html);
     }
 
     public function test_radio_widget_view_mode_shows_label(): void
@@ -567,9 +600,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'low');
 
-        $this->assertStringContainsString('Low', $html);
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringNotContainsString('type="radio"', $html);
+        $this->assert_contains_string('Low', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_not_contains_string('type="radio"', $html);
     }
 
     public function test_radio_widget_view_mode_unknown_value(): void
@@ -580,7 +613,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'unknown');
 
-        $this->assertStringContainsString('unknown', $html);
+        $this->assert_contains_string('unknown', $html);
     }
 
     // =========================================================================
@@ -595,9 +628,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'secret123');
 
-        $this->assertStringContainsString('type="password"', $html);
-        $this->assertStringContainsString('value=""', $html);
-        $this->assertStringNotContainsString('secret123', $html);
+        $this->assert_contains_string('type="password"', $html);
+        $this->assert_contains_string('value=""', $html);
+        $this->assert_not_contains_string('secret123', $html);
     }
 
     public function test_password_widget_autocomplete_attribute(): void
@@ -608,7 +641,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('autocomplete="new-password"', $html);
+        $this->assert_contains_string('autocomplete="new-password"', $html);
     }
 
     public function test_password_widget_renders_name(): void
@@ -619,7 +652,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('name="pass"', $html);
+        $this->assert_contains_string('name="pass"', $html);
     }
 
     public function test_password_widget_view_mode_shows_asterisks(): void
@@ -629,9 +662,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'secret');
 
-        $this->assertStringContainsString('********', $html);
-        $this->assertStringNotContainsString('secret', $html);
-        $this->assertStringContainsString('form-view-value', $html);
+        $this->assert_contains_string('********', $html);
+        $this->assert_not_contains_string('secret', $html);
+        $this->assert_contains_string('form-view-value', $html);
     }
 
     public function test_password_widget_view_mode_shows_asterisks_even_null(): void
@@ -641,7 +674,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, null);
 
-        $this->assertStringContainsString('********', $html);
+        $this->assert_contains_string('********', $html);
     }
 
     // =========================================================================
@@ -656,9 +689,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 25);
 
-        $this->assertStringContainsString('<input', $html);
-        $this->assertStringContainsString('type="number"', $html);
-        $this->assertStringContainsString('value="25"', $html);
+        $this->assert_contains_string('<input', $html);
+        $this->assert_contains_string('type="number"', $html);
+        $this->assert_contains_string('value="25"', $html);
     }
 
     public function test_number_widget_auto_step_any_for_decimal(): void
@@ -669,7 +702,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 9.99);
 
-        $this->assertStringContainsString('step="any"', $html);
+        $this->assert_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_auto_step_any_for_float(): void
@@ -680,7 +713,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 3.14);
 
-        $this->assertStringContainsString('step="any"', $html);
+        $this->assert_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_auto_step_any_for_real(): void
@@ -691,7 +724,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 1.5);
 
-        $this->assertStringContainsString('step="any"', $html);
+        $this->assert_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_auto_step_any_for_numeric(): void
@@ -702,7 +735,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 10.5);
 
-        $this->assertStringContainsString('step="any"', $html);
+        $this->assert_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_auto_step_any_for_double_precision(): void
@@ -713,7 +746,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 1.23);
 
-        $this->assertStringContainsString('step="any"', $html);
+        $this->assert_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_no_step_for_integer(): void
@@ -724,7 +757,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 5);
 
-        $this->assertStringNotContainsString('step=', $html);
+        $this->assert_not_contains_string('step=', $html);
     }
 
     public function test_number_widget_manual_step_not_overridden(): void
@@ -735,8 +768,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 10, ['step' => '0.01']);
 
-        $this->assertStringContainsString('step="0.01"', $html);
-        $this->assertStringNotContainsString('step="any"', $html);
+        $this->assert_contains_string('step="0.01"', $html);
+        $this->assert_not_contains_string('step="any"', $html);
     }
 
     public function test_number_widget_null_value_empty_string(): void
@@ -747,7 +780,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('value=""', $html);
+        $this->assert_contains_string('value=""', $html);
     }
 
     public function test_number_widget_view_mode(): void
@@ -757,9 +790,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 42);
 
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringContainsString('42', $html);
-        $this->assertStringNotContainsString('<input', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_contains_string('42', $html);
+        $this->assert_not_contains_string('<input', $html);
     }
 
     // =========================================================================
@@ -774,9 +807,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '2000-01-15');
 
-        $this->assertStringContainsString('<input', $html);
-        $this->assertStringContainsString('type="date"', $html);
-        $this->assertStringContainsString('value="2000-01-15"', $html);
+        $this->assert_contains_string('<input', $html);
+        $this->assert_contains_string('type="date"', $html);
+        $this->assert_contains_string('value="2000-01-15"', $html);
     }
 
     public function test_date_widget_renders_datetime_local_type(): void
@@ -787,7 +820,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '2024-01-01T10:00');
 
-        $this->assertStringContainsString('type="datetime-local"', $html);
+        $this->assert_contains_string('type="datetime-local"', $html);
     }
 
     public function test_date_widget_renders_time_type(): void
@@ -798,8 +831,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '14:30');
 
-        $this->assertStringContainsString('type="time"', $html);
-        $this->assertStringContainsString('value="14:30"', $html);
+        $this->assert_contains_string('type="time"', $html);
+        $this->assert_contains_string('value="14:30"', $html);
     }
 
     public function test_date_widget_null_value_empty_string(): void
@@ -810,7 +843,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('value=""', $html);
+        $this->assert_contains_string('value=""', $html);
     }
 
     public function test_date_widget_renders_name(): void
@@ -821,7 +854,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('name="start_date"', $html);
+        $this->assert_contains_string('name="start_date"', $html);
     }
 
     public function test_date_widget_view_mode(): void
@@ -831,9 +864,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, '2000-06-15');
 
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringContainsString('2000-06-15', $html);
-        $this->assertStringNotContainsString('<input', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_contains_string('2000-06-15', $html);
+        $this->assert_not_contains_string('<input', $html);
     }
 
     // =========================================================================
@@ -848,8 +881,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('<input', $html);
-        $this->assertStringContainsString('type="file"', $html);
+        $this->assert_contains_string('<input', $html);
+        $this->assert_contains_string('type="file"', $html);
     }
 
     public function test_file_widget_does_not_have_value_attribute(): void
@@ -861,7 +894,7 @@ class WidgetTest extends TestCase
         $html = $widget->render_edit($field, '/uploads/photo.jpg');
 
         // File inputs should not include a value attribute for security
-        $this->assertStringNotContainsString('value=', $html);
+        $this->assert_not_contains_string('value=', $html);
     }
 
     public function test_file_widget_renders_name(): void
@@ -872,7 +905,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, null);
 
-        $this->assertStringContainsString('name="document"', $html);
+        $this->assert_contains_string('name="document"', $html);
     }
 
     public function test_file_widget_view_mode_no_file(): void
@@ -882,8 +915,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, null);
 
-        $this->assertStringContainsString('No file', $html);
-        $this->assertStringContainsString('form-view-empty', $html);
+        $this->assert_contains_string('No file', $html);
+        $this->assert_contains_string('form-view-empty', $html);
     }
 
     public function test_file_widget_view_mode_with_file(): void
@@ -893,9 +926,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'photo.jpg');
 
-        $this->assertStringContainsString('photo.jpg', $html);
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringNotContainsString('No file', $html);
+        $this->assert_contains_string('photo.jpg', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_not_contains_string('No file', $html);
     }
 
     public function test_file_widget_view_mode_empty_string_shows_no_file(): void
@@ -905,7 +938,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, '');
 
-        $this->assertStringContainsString('No file', $html);
+        $this->assert_contains_string('No file', $html);
     }
 
     // =========================================================================
@@ -920,9 +953,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'abc123');
 
-        $this->assertStringContainsString('type="hidden"', $html);
-        $this->assertStringContainsString('value="abc123"', $html);
-        $this->assertStringContainsString('name="csrf_token"', $html);
+        $this->assert_contains_string('type="hidden"', $html);
+        $this->assert_contains_string('value="abc123"', $html);
+        $this->assert_contains_string('name="csrf_token"', $html);
     }
 
     public function test_hidden_widget_no_wrapper(): void
@@ -933,8 +966,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, 'xyz');
 
-        $this->assertStringNotContainsString('<div', $html);
-        $this->assertStringNotContainsString('<label', $html);
+        $this->assert_not_contains_string('<div', $html);
+        $this->assert_not_contains_string('<label', $html);
     }
 
     public function test_hidden_widget_renders_id(): void
@@ -945,7 +978,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('id="field-session_id"', $html);
+        $this->assert_contains_string('id="field-session_id"', $html);
     }
 
     public function test_hidden_widget_view_mode_empty_string(): void
@@ -955,7 +988,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, 'secret');
 
-        $this->assertSame('', $html);
+        $this->assert_same('', $html);
     }
 
     // =========================================================================
@@ -970,11 +1003,11 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '2024-01-01');
 
-        $this->assertStringContainsString('type="hidden"', $html);
-        $this->assertStringContainsString('name="created_at"', $html);
-        $this->assertStringContainsString('value="2024-01-01"', $html);
-        $this->assertStringContainsString('<span class="form-readonly-value">', $html);
-        $this->assertStringContainsString('2024-01-01</span>', $html);
+        $this->assert_contains_string('type="hidden"', $html);
+        $this->assert_contains_string('name="created_at"', $html);
+        $this->assert_contains_string('value="2024-01-01"', $html);
+        $this->assert_contains_string('<span class="form-readonly-value">', $html);
+        $this->assert_contains_string('2024-01-01</span>', $html);
     }
 
     public function test_readonly_widget_edit_escapes_value(): void
@@ -985,8 +1018,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '<script>');
 
-        $this->assertStringNotContainsString('<script>', $html);
-        $this->assertStringContainsString('&lt;script&gt;', $html);
+        $this->assert_not_contains_string('<script>', $html);
+        $this->assert_contains_string('&lt;script&gt;', $html);
     }
 
     public function test_readonly_widget_view_mode(): void
@@ -996,9 +1029,9 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_view($field, '2024-06-01');
 
-        $this->assertStringContainsString('form-view-value', $html);
-        $this->assertStringContainsString('2024-06-01', $html);
-        $this->assertStringNotContainsString('type="hidden"', $html);
+        $this->assert_contains_string('form-view-value', $html);
+        $this->assert_contains_string('2024-06-01', $html);
+        $this->assert_not_contains_string('type="hidden"', $html);
     }
 
     // =========================================================================
@@ -1013,7 +1046,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('disabled', $html);
+        $this->assert_contains_string('disabled', $html);
     }
 
     public function test_widget_renders_readonly(): void
@@ -1024,7 +1057,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('readonly', $html);
+        $this->assert_contains_string('readonly', $html);
     }
 
     public function test_widget_renders_custom_attributes(): void
@@ -1035,7 +1068,7 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('data-validate="true"', $html);
+        $this->assert_contains_string('data-validate="true"', $html);
     }
 
     public function test_widget_renders_input_class(): void
@@ -1046,6 +1079,8 @@ class WidgetTest extends TestCase
 
         $html = $widget->render_edit($field, '');
 
-        $this->assertStringContainsString('class="form-control"', $html);
+        $this->assert_contains_string('class="form-control"', $html);
     }
 }
+
+exit(WidgetTest::run_all('Italix Forms — widgets'));

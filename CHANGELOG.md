@@ -1,5 +1,17 @@
 # Changelog — italix/forms
 
+## [Unreleased]
+
+### Changed
+
+- **Every suite runs on the shared runner.** The eight PHPUnit classes (`DelegationTest`, `FieldMetaTest`,
+  `FormSectionTest`, `FunctionsTest`, `GenericAdapterTest`, `RelationTest`, `WidgetRegistryTest`, `WidgetTest`) run as
+  they are written, through `tests/XunitCase.php`: each `test_*` method on a fresh instance, one
+  `Italix\Testing\test()` per method, stopped at its first failed assertion — and a method that asserts nothing
+  fails. 329 methods and every assertion PHPUnit made: 703 here against its 711, which counts each
+  expected exception and expected message as one, and `assertGreaterThanOrEqual` as two. `ix test` runs them; `composer test` lists all eleven suites.
+- `phpunit/phpunit` is no longer a dev dependency; `phpunit.xml.dist` and `composer test:phpunit` are gone.
+
 ## [2.3.1] — 2026-08-30
 
 ### Fixed
